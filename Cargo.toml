@@ -1,0 +1,24 @@
+[package]
+name = "ac-ninja"
+version = "0.1.0"
+author = "UG"
+about = "Simple CLI to have a good experience in AtCoder contests"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1.9.0", features = ["macros", "rt-multi-thread", "time"] }
+scraper = "0.14.0"
+shellexpand = "3.0.0"
+colored = "2.0.0"
+prettytable-rs = "0.10.0"
+anyhow = "1.0.69"
+serde = { version = "^1.0", features = ["derive"]}
+toml = "0.7.2"
+regex = "1.7.1"
+clap = { version = "4.1.8", features = ["derive"] }
+reqwest = { version = "0.11.14", features = ["cookies", "json"] }
+dialoguer = "0.10.3"
+indicatif = "0.17.3"
+chrono = "0.4.23"
