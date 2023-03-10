@@ -16,7 +16,7 @@ const USER_AGENT: &str = "ac-ninja";
 
 impl ACS {
     pub async fn new() -> Result<Self> {
-        let config_map: ConfigMap = get_config().unwrap();
+        let config_map: ConfigMap = get_config()?;
         let config_str_map = config_map.to_hash_map_string();
         let client = Client::builder()
             .user_agent(USER_AGENT)
