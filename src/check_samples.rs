@@ -8,7 +8,8 @@ use std::process::{Command, Stdio};
 
 use crate::ac_scraper::Samples;
 use crate::config::{
-    make_compile_command, make_execute_command, ConfigMap, ConfigStrMap, ConfigValue, ProblemStrInfo,
+    make_compile_command, make_execute_command, ConfigMap, ConfigStrMap, ConfigValue,
+    ProblemStrInfo,
 };
 use crate::util::split_one_line_command;
 

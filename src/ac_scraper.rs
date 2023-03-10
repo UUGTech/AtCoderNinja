@@ -19,7 +19,7 @@ use shellexpand::full;
 
 use crate::{
     check_samples::Status,
-    config::{ConfigStrMap, ProblemStrInfo, ConfigMap},
+    config::{ConfigMap, ConfigStrMap, ProblemStrInfo},
     data::ACS,
     util::str_format,
 };
@@ -285,7 +285,10 @@ pub async fn ac_submit(
     let task_screen_name = str_format(TASK_SCREEN_NAME.to_string(), &data_map);
     let params = [
         ("data.TaskScreenName", task_screen_name.as_str()),
-        ("data.LanguageId", &config_map.get("language_id").unwrap().to_string()),
+        (
+            "data.LanguageId",
+            &config_map.get("language_id").unwrap().to_string(),
+        ),
         ("sourceCode", &source_str),
         ("csrf_token", csrf_token.as_str()),
     ];

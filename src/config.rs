@@ -1,8 +1,8 @@
 use anyhow::{anyhow, Context, Result};
 use std::{collections::HashMap, env, fs, io::Write, path::PathBuf};
 
-use crate::{util::*, cast};
 use crate::language_id::lang_to_id;
+use crate::{cast, util::*};
 
 use serde::{Deserialize, Serialize};
 use shellexpand::full;
@@ -356,7 +356,10 @@ pub fn get_config() -> Result<ConfigMap> {
     if !path.is_file() {
         let mut file = fs::File::create(path)?;
         file.write_all(DEFAULT_CONFIG.as_bytes())?;
-        return Err(anyhow!("You need to make your configuration at {}", full(CONFIG_PATH)?.to_string()));
+        return Err(anyhow!(
+            "You need to make your configuration at {}",
+            full(CONFIG_PATH)?.to_string()
+        ));
     }
 
     let config_str = fs::read_to_string(path)?;
@@ -369,8 +372,13 @@ pub fn get_config() -> Result<ConfigMap> {
     Ok(config_map)
 }
 
-fn config_check(mut config_map : ConfigMap) -> Result<ConfigMap> {
-    let need = ["need_to_compile", "contest_dir", "execute_command", "source_file_path"];
+fn config_check(mut config_map: ConfigMap) -> Result<ConfigMap> {
+    let need = [
+        "need_to_compile",
+        "contest_dir",
+        "execute_command",
+        "source_file_path",
+    ];
     let mut miss: Vec<&str> = Vec::new();
     for k in need {
         if !config_map.contains_key(k) {
@@ -378,8 +386,12 @@ fn config_check(mut config_map : ConfigMap) -> Result<ConfigMap> {
         }
     }
 
-    if config_map.get("need_to_compile").unwrap_or(&ConfigValue::Boolean(false)) == &ConfigValue::Boolean(true)
-        && !config_map.contains_key("compile_command") {
+    if config_map
+        .get("need_to_compile")
+        .unwrap_or(&ConfigValue::Boolean(false))
+        == &ConfigValue::Boolean(true)
+        && !config_map.contains_key("compile_command")
+    {
         miss.push("compile_command");
     }
 
@@ -389,7 +401,10 @@ fn config_check(mut config_map : ConfigMap) -> Result<ConfigMap> {
 
     if miss.len() > 0 {
         let miss_str: Vec<String> = miss.iter().map(|&s| s.to_string()).collect();
-        return Err(anyhow!("Couldn't find these configurations in your config file: [{}]", miss_str.join(", ")));
+        return Err(anyhow!(
+            "Couldn't find these configurations in your config file: [{}]",
+            miss_str.join(", ")
+        ));
     }
 
     let lang_id: i64 = if config_map.contains_key("language_name") {

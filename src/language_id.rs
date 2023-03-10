@@ -72,4 +72,3 @@ pub fn lang_to_id(lang_name: &str) -> Result<i64> {
         _ => Err(anyhow!("Unknown language name error.")),
     }
 }
-

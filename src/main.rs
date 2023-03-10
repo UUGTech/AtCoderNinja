@@ -2,8 +2,8 @@ mod ac_scraper;
 mod check_samples;
 mod config;
 mod data;
-mod util;
 mod language_id;
+mod util;
 
 use std::path::PathBuf;
 
@@ -126,7 +126,13 @@ async fn main() -> Result<()> {
     if (sample_results.total_status != Status::AC && !cli_args.force) || cli_args.local {
         return Ok(());
     }
-    ac_submit(&acs, &problem_str_info, &acs.config_str_map, &acs.config_map).await?;
+    ac_submit(
+        &acs,
+        &problem_str_info,
+        &acs.config_str_map,
+        &acs.config_map,
+    )
+    .await?;
 
     Ok(())
 }
