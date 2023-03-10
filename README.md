@@ -12,7 +12,7 @@ cargo install --git https://github.com/UUGTech/AtCoderNinja
 
 ## アンインストール
 
-以下のコマンドでインストールできます
+以下のコマンドでアンインストールできます
 
 ```bash
 cargo uninstall ac-ninja
