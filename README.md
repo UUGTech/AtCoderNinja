@@ -1,6 +1,25 @@
-# [WIP]AtCoderNinja
+# AtCoderNinja
+
+サンプルケースの自動実行・サンプルケースでACの際の自動提出を可能にするCLIです.
+
+## インストール
+
+以下のコマンドでインストールできます
+
+```bash
+cargo install --git https://github.com/UUGTech/AtCoderNinja
+```
+
+## アンインストール
+
+以下のコマンドでインストールできます
+
+```bash
+cargo uninstall ac-ninja
+```
 
 ## 設定
+
 `~/.config/ac-ninja/config.toml`に各種設定を記述します.
 設定の詳しい内容は[CONFIG.md](./CONFIG.md)を参照してください.
 
