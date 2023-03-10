@@ -2,7 +2,7 @@
 
 ## 設定
 `~/.config/ac-ninja/config.toml`に各種設定を記述します.
-設定の詳しい内容は[CONFIG.md](../config.md)を参照してください.
+設定の詳しい内容は[CONFIG.md](./config.md)を参照してください.
 
 ## 使い方
 
