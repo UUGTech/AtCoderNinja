@@ -8,11 +8,13 @@ use std::process::{Command, Stdio};
 
 use crate::ac_scraper::Samples;
 use crate::config::{
-    make_compile_command, make_execute_command, ConfigMap, ConfigStrMap, ConfigValue, ProblemStrInfo,
+    make_compile_command, make_execute_command, ConfigMap, ConfigStrMap, ConfigValue,
+    ProblemStrInfo,
 };
 use crate::util::split_one_line_command;
 
 #[derive(PartialEq, Eq)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum Status {
     AC,
     WA,
@@ -56,7 +58,7 @@ impl Status {
                 let re = Regex::new(r"^(\d+) */ *(\d+) *(.*)$").unwrap();
                 if let Some(caps) = re.captures(v) {
                     let status = caps[3].trim();
-                    if status == "" {
+                    if status.is_empty() {
                         Status::AC
                     } else {
                         Status::from_table_str(status)
@@ -92,16 +94,8 @@ fn add_total_status_to_table(mut table: Table, total_status: &Status) -> Table {
 
 fn compile(problem_str_info: &ProblemStrInfo, config_str_map: &ConfigStrMap) -> Result<Status> {
     let mut compile_config: HashMap<String, String> = HashMap::new();
-    compile_config.extend(
-        config_str_map
-            .into_iter()
-            .map(|(k, v)| (k.clone(), v.clone())),
-    );
-    compile_config.extend(
-        problem_str_info
-            .into_iter()
-            .map(|(k, v)| (k.clone(), v.clone())),
-    );
+    compile_config.extend(config_str_map.iter().map(|(k, v)| (k.clone(), v.clone())));
+    compile_config.extend(problem_str_info.iter().map(|(k, v)| (k.clone(), v.clone())));
 
     let compile_command = make_compile_command(compile_config)?;
 
@@ -132,16 +126,8 @@ pub fn execute_with_manual_input(
 ) -> Result<()> {
     println!("{}", format!("{:-^30}", " Manual input mode ").blue());
     let mut execute_config: HashMap<String, String> = HashMap::new();
-    execute_config.extend(
-        config_str_map
-            .into_iter()
-            .map(|(k, v)| (k.clone(), v.clone())),
-    );
-    execute_config.extend(
-        problem_str_info
-            .into_iter()
-            .map(|(k, v)| (k.clone(), v.clone())),
-    );
+    execute_config.extend(config_str_map.iter().map(|(k, v)| (k.clone(), v.clone())));
+    execute_config.extend(problem_str_info.iter().map(|(k, v)| (k.clone(), v.clone())));
     let execute_command = make_execute_command(execute_config)?;
     let (command, args) = split_one_line_command(&execute_command);
 
@@ -189,7 +175,7 @@ pub fn sample_check(
         .get("need_to_compile")
         .unwrap_or(&ConfigValue::Boolean(false))
     {
-        compile(&problem_str_info, &config_str_map)?
+        compile(problem_str_info, config_str_map)?
     } else {
         Status::AC
     };
@@ -206,16 +192,8 @@ pub fn sample_check(
     }
 
     let mut execute_config: HashMap<String, String> = HashMap::new();
-    execute_config.extend(
-        config_str_map
-            .into_iter()
-            .map(|(k, v)| (k.clone(), v.clone())),
-    );
-    execute_config.extend(
-        problem_str_info
-            .into_iter()
-            .map(|(k, v)| (k.clone(), v.clone())),
-    );
+    execute_config.extend(config_str_map.iter().map(|(k, v)| (k.clone(), v.clone())));
+    execute_config.extend(problem_str_info.iter().map(|(k, v)| (k.clone(), v.clone())));
     let execute_command = make_execute_command(execute_config)?;
     let (command, args) = split_one_line_command(&execute_command);
 

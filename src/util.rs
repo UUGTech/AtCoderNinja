@@ -12,7 +12,7 @@ macro_rules! cast {
     }};
 }
 
-pub fn split_one_line_command(one_line: &String) -> (&str, Vec<&str>) {
+pub fn split_one_line_command(one_line: &str) -> (&str, Vec<&str>) {
     let mut v: Vec<&str> = one_line.split(' ').collect();
     v.reverse();
     let command = v.pop().unwrap();
@@ -26,7 +26,7 @@ pub fn str_format(format_string: String, vals: &HashMap<String, String>) -> Stri
     let mut keys: Vec<String> = Vec::new();
     let mut labels: Vec<String> = Vec::new();
 
-    for caps in re.captures_iter(&format_string.as_str()) {
+    for caps in re.captures_iter(format_string.as_str()) {
         let label = caps[0].to_string().clone();
         let key = &label[2..(label.len() - 2)];
         keys.push(key.to_string());
