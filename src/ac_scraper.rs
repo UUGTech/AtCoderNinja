@@ -20,7 +20,7 @@ use shellexpand::full;
 use crate::{
     check_samples::Status,
     config::{ConfigMap, ConfigStrMap, ProblemStrInfo},
-    data::ACS,
+    data::ACN,
     util::str_format,
 };
 
@@ -42,11 +42,11 @@ pub struct Samples {
     pub size: usize,
 }
 
-async fn get_csrf_token(acs: &ACS, url: &str) -> Result<String> {
-    let login_body = acs
+async fn get_csrf_token(acn: &ACN, url: &str) -> Result<String> {
+    let login_body = acn
         .client
         .get(url)
-        .headers(acs.cookies.clone().unwrap_or(HeaderMap::new()))
+        .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
         .send()
         .await?
         .error_for_status()?
@@ -73,8 +73,8 @@ async fn save_cookie(resp: &Response) -> Result<()> {
     if !local_dir.is_dir() {
         create_dir_all(local_dir)?;
     }
-    let mut file = File::create(&full(&LOCAL_SESSION_PATH).unwrap().to_string())?;
-    file.write_all(&cookies_str.as_bytes())?;
+    let mut file = File::create(full(&LOCAL_SESSION_PATH).unwrap().to_string())?;
+    file.write_all(cookies_str.as_bytes())?;
 
     Ok(())
 }
@@ -88,7 +88,7 @@ pub async fn ac_logout() -> Result<()> {
     Ok(())
 }
 
-pub async fn ac_login(acs: &ACS) -> Result<()> {
+pub async fn ac_login(acn: &ACN) -> Result<()> {
     println!("{}", format!("{:-^30}", " Login ").blue());
     let shinobi = "🥷";
     let prompt = "Username".black();
@@ -103,7 +103,7 @@ pub async fn ac_login(acs: &ACS) -> Result<()> {
         .with_prompt(password_prompt)
         .interact()?;
 
-    let csrf_token: String = get_csrf_token(&acs, LOGIN_URL).await?;
+    let csrf_token: String = get_csrf_token(acn, LOGIN_URL).await?;
 
     let params = [
         ("csrf_token", csrf_token.as_str()),
@@ -111,10 +111,10 @@ pub async fn ac_login(acs: &ACS) -> Result<()> {
         ("password", password.as_str()),
     ];
 
-    let resp = acs
+    let resp = acn
         .client
         .post(LOGIN_URL)
-        .headers(acs.cookies.clone().unwrap_or(HeaderMap::new()))
+        .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
         .form(&params)
         .send()
         .await?;
@@ -155,10 +155,7 @@ pub fn get_local_session() -> Result<Option<HeaderMap>> {
 
     let mut cookie_headers = HeaderMap::new();
     reader.lines().for_each(|line| {
-        cookie_headers.insert(
-            COOKIE,
-            HeaderValue::from_str(&format!("{}", line.unwrap())).unwrap(),
-        );
+        cookie_headers.insert(COOKIE, HeaderValue::from_str(&line.unwrap()).unwrap());
     });
     Ok(Some(cookie_headers))
 }
@@ -166,7 +163,9 @@ pub fn get_local_session() -> Result<Option<HeaderMap>> {
 struct Submission {
     time: String,
     name: String,
+    #[allow(dead_code)]
     username: String,
+    #[allow(dead_code)]
     lang: String,
     id: String,
     status_str: String,
@@ -251,27 +250,19 @@ fn get_submission_info_from_row(row: &ElementRef) -> Result<Submission> {
 }
 
 fn make_submission_display(submission: &Submission) -> String {
-    format!("{} | {}", submission.time, submission.name).to_string()
+    format!("{} | {}", submission.time, submission.name)
 }
 
 pub async fn ac_submit(
-    acs: &ACS,
+    acn: &ACN,
     problem_str_info: &ProblemStrInfo,
     config_str_map: &ConfigStrMap,
     config_map: &ConfigMap,
 ) -> Result<()> {
     println!("{}", format!("{:-^30}", " Submit ").blue());
     let mut data_map: HashMap<String, String> = HashMap::new();
-    data_map.extend(
-        config_str_map
-            .into_iter()
-            .map(|(k, v)| (k.clone(), v.clone())),
-    );
-    data_map.extend(
-        problem_str_info
-            .into_iter()
-            .map(|(k, v)| (k.clone(), v.clone())),
-    );
+    data_map.extend(config_str_map.iter().map(|(k, v)| (k.clone(), v.clone())));
+    data_map.extend(problem_str_info.iter().map(|(k, v)| (k.clone(), v.clone())));
 
     let submit_file = str_format(config_str_map["source_file_path"].clone(), &data_map);
     println!("{}{}", "Submit file: ".green(), submit_file);
@@ -280,7 +271,7 @@ pub async fn ac_submit(
     let source_str = String::from_utf8_lossy(&source);
 
     let submit_url = str_format(SUBMIT_URL.to_string(), &data_map);
-    let csrf_token: String = get_csrf_token(&acs, submit_url.as_str()).await?;
+    let csrf_token: String = get_csrf_token(acn, submit_url.as_str()).await?;
 
     let task_screen_name = str_format(TASK_SCREEN_NAME.to_string(), &data_map);
     let params = [
@@ -301,10 +292,10 @@ pub async fn ac_submit(
         )
         .green()
     );
-    let resp = acs
+    let resp = acn
         .client
         .post(submit_url.as_str())
-        .headers(acs.cookies.clone().unwrap_or(HeaderMap::new()))
+        .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
         .form(&params)
         .send()
         .await?;
@@ -344,10 +335,10 @@ pub async fn ac_submit(
     let mut timeout_cnt = 0;
     while !finish {
         let submissions_url = str_format(SUBMISSIONS_URL.to_string(), &data_map);
-        let req = acs
+        let req = acn
             .client
             .get(submissions_url)
-            .headers(acs.cookies.clone().unwrap_or(HeaderMap::new()))
+            .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
             .timeout(tokio::time::Duration::from_millis(2000));
         let resp = req.send().await;
 
@@ -380,7 +371,7 @@ pub async fn ac_submit(
 
         let doc = Html::parse_document(&body.unwrap());
 
-        finish_msg = if submission_id == None {
+        finish_msg = if submission_id.is_none() {
             let tr_selector = Selector::parse("table tbody tr").unwrap();
             let latest_row = doc.select(&tr_selector).next().unwrap();
             let submission = get_submission_info_from_row(&latest_row)?;
@@ -404,16 +395,15 @@ pub async fn ac_submit(
             let msg = format!(
                 "{} | {}",
                 make_submission_display(&submission),
-                status.as_display_string().reverse().to_string()
+                status.as_display_string().reverse()
             );
             submission_result = status;
             pb.set_message(msg.clone());
             msg
         } else {
-            let td_selector = Selector::parse(
-                format!("td[data-id=\"{}\"]", submission_id.unwrap().to_string()).as_str(),
-            )
-            .unwrap();
+            let td_selector =
+                Selector::parse(format!("td[data-id=\"{}\"]", submission_id.unwrap()).as_str())
+                    .unwrap();
             let target_row =
                 ElementRef::wrap(doc.select(&td_selector).next().unwrap().parent().unwrap())
                     .unwrap();
@@ -437,7 +427,7 @@ pub async fn ac_submit(
             let msg = format!(
                 "{} | {}",
                 make_submission_display(&submission),
-                status.as_display_string().reverse().to_string()
+                status.as_display_string().reverse()
             );
             submission_result = status;
             pb.set_message(msg.clone());
@@ -455,7 +445,7 @@ pub async fn ac_submit(
 }
 
 pub async fn get_sample_cases(problem_str_info: &ProblemStrInfo) -> reqwest::Result<Samples> {
-    let contest_url = str_format(CONTEST_URL.to_string(), &problem_str_info);
+    let contest_url = str_format(CONTEST_URL.to_string(), problem_str_info);
     let body = reqwest::get(contest_url)
         .await?
         .error_for_status()?
@@ -492,7 +482,7 @@ pub async fn get_sample_cases(problem_str_info: &ProblemStrInfo) -> reqwest::Res
     }
 
     let size = match inputs.len() == outputs.len() {
-        true if inputs.len() > 0 => Some(inputs.len()),
+        true if !inputs.is_empty() => Some(inputs.len()),
         _ => None,
     }
     .expect(PARSE_ERROR);

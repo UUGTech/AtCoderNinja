@@ -74,14 +74,14 @@ enum MiniCommand {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
-    let mut acs = ACS::new().await?;
+    let mut acn = ACN::new().await?;
 
     if let Some(subcommand) = cli.subcommand {
         match subcommand {
             MiniCommand::Login => {
                 ac_logout().await?;
-                ac_login(&acs).await?;
-                acs.cookies = get_local_session()?;
+                ac_login(&acn).await?;
+                acn.cookies = get_local_session()?;
                 return Ok(());
             }
             MiniCommand::Logout => {
@@ -93,33 +93,33 @@ async fn main() -> Result<()> {
     }
 
     // login check
-    if acs.cookies.is_none() {
+    if acn.cookies.is_none() {
         println!(
             "{}{}",
             "Local session not found!\n".red(),
             "You need to login at first".green()
         );
-        ac_login(&acs).await?;
-        acs.cookies = get_local_session()?;
+        ac_login(&acn).await?;
+        acn.cookies = get_local_session()?;
     }
 
     let cli_args = cli.args.unwrap();
 
-    let problem_info = get_problem_info_from_path(&acs.config_str_map, cli_args.problem_id_arg)?;
+    let problem_info = get_problem_info_from_path(&acn.config_str_map, cli_args.problem_id_arg)?;
     let problem_str_info = get_problem_str_info(&problem_info);
 
     if cli_args.insert {
-        execute_with_manual_input(&problem_str_info, &acs.config_str_map)?;
+        execute_with_manual_input(&problem_str_info, &acn.config_str_map)?;
         return Ok(());
     }
     let samples = get_sample_cases(&problem_str_info).await?;
     let sample_results = sample_check(
         &problem_str_info,
         &samples,
-        &acs.config_str_map,
-        &acs.config_map,
+        &acn.config_str_map,
+        &acn.config_map,
     )?;
-    if sample_results.failed_details.len() > 0 {
+    if !sample_results.failed_details.is_empty() {
         display_failed_detail(sample_results.failed_details);
     }
 
@@ -127,10 +127,10 @@ async fn main() -> Result<()> {
         return Ok(());
     }
     ac_submit(
-        &acs,
+        &acn,
         &problem_str_info,
-        &acs.config_str_map,
-        &acs.config_map,
+        &acn.config_str_map,
+        &acn.config_map,
     )
     .await?;
 

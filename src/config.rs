@@ -1,8 +1,9 @@
 use anyhow::{anyhow, Context, Result};
-use std::{collections::HashMap, env, fs, io::Write, path::PathBuf};
+use std::fmt;
+use std::{collections::HashMap, env, fs, io::Write};
 
 use crate::language_id::lang_to_id;
-use crate::{cast, util::*};
+use crate::util::*;
 
 use serde::{Deserialize, Serialize};
 use shellexpand::full;
@@ -73,13 +74,13 @@ pub type ConfigMap = HashMap<String, ConfigValue>;
 pub type ConfigStrMap = HashMap<String, String>;
 pub type ConfigVector = Vec<ConfigValue>;
 
-impl ConfigValue {
-    pub fn to_string(&self) -> String {
+impl fmt::Display for ConfigValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ConfigValue::String(s) => s.clone(),
-            ConfigValue::Integer(i) => i.to_string(),
-            ConfigValue::Float(f) => f.to_string(),
-            ConfigValue::Boolean(b) => b.to_string(),
+            ConfigValue::String(s) => write!(f, "{}", s.clone()),
+            ConfigValue::Integer(i) => write!(f, "{}", i),
+            ConfigValue::Float(v) => write!(f, "{}", v),
+            ConfigValue::Boolean(b) => write!(f, "{}", b),
             ConfigValue::Vector(arr) => {
                 let mut buf = String::new();
                 buf.push('[');
@@ -87,12 +88,12 @@ impl ConfigValue {
                     buf.push_str(v.to_string().as_str());
                     buf.push_str(", ");
                 }
-                if arr.len() > 0 {
+                if !arr.is_empty() {
                     buf.pop();
                     buf.pop();
                 }
                 buf.push(']');
-                buf
+                write!(f, "{}", buf)
             }
             ConfigValue::Map(mp) => {
                 let mut buf = String::new();
@@ -102,11 +103,46 @@ impl ConfigValue {
                     buf.push_str(" = ");
                     buf.push_str(v.to_string().as_str());
                 }
-                buf
+                write!(f, "{}", buf)
             }
         }
     }
 }
+
+// impl ConfigValue {
+//     pub fn to_string(&self) -> String {
+//         match self {
+//             ConfigValue::String(s) => s.clone(),
+//             ConfigValue::Integer(i) => i.to_string(),
+//             ConfigValue::Float(f) => f.to_string(),
+//             ConfigValue::Boolean(b) => b.to_string(),
+//             ConfigValue::Vector(arr) => {
+//                 let mut buf = String::new();
+//                 buf.push('[');
+//                 for v in arr {
+//                     buf.push_str(v.to_string().as_str());
+//                     buf.push_str(", ");
+//                 }
+//                 if !arr.is_empty() {
+//                     buf.pop();
+//                     buf.pop();
+//                 }
+//                 buf.push(']');
+//                 buf
+//             }
+//             ConfigValue::Map(mp) => {
+//                 let mut buf = String::new();
+//                 for (k, v) in mp {
+//                     buf.push('\"');
+//                     buf.push_str(k);
+//                     buf.push_str(" = ");
+//                     buf.push_str(v.to_string().as_str());
+//                 }
+//                 buf
+//             }
+//         }
+//     }
+// }
 
 trait PushConfigValue {
     fn push_string(&mut self, value: String);
@@ -226,21 +262,24 @@ pub struct Config {
 }
 
 #[derive(Debug)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum ContestType {
     ABC,
     ARC,
     AGC,
 }
 
-impl ContestType {
-    pub fn to_string(&self) -> String {
+impl fmt::Display for ContestType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ContestType::ABC => "ABC".to_string(),
-            ContestType::ARC => "ARC".to_string(),
-            ContestType::AGC => "AGC".to_string(),
+            ContestType::ABC => write!(f, "abc"),
+            ContestType::ARC => write!(f, "arc"),
+            ContestType::AGC => write!(f, "agc"),
         }
     }
+}
 
+impl ContestType {
     pub fn from_str(v: &str) -> Option<Self> {
         match v {
             "abc" => Some(ContestType::ABC),
@@ -325,7 +364,7 @@ pub fn get_problem_str_info(problem_info: &ProblemInfo) -> HashMap<String, Strin
     let mut buf: HashMap<String, String> = HashMap::new();
     buf.insert(
         "contest_type".to_string(),
-        problem_info.contest_type.to_string().to_lowercase(),
+        problem_info.contest_type.to_string(),
     );
     buf.insert(
         "contest_id".to_string(),
@@ -337,7 +376,7 @@ pub fn get_problem_str_info(problem_info: &ProblemInfo) -> HashMap<String, Strin
     );
     buf.insert(
         "problem_id".to_string(),
-        problem_info.problem_id.to_string().to_lowercase(),
+        problem_info.problem_id.to_string(),
     );
 
     buf
@@ -399,7 +438,7 @@ fn config_check(mut config_map: ConfigMap) -> Result<ConfigMap> {
         miss.push("language_( id | name )");
     }
 
-    if miss.len() > 0 {
+    if !miss.is_empty() {
         let miss_str: Vec<String> = miss.iter().map(|&s| s.to_string()).collect();
         return Err(anyhow!(
             "Couldn't find these configurations in your config file: [{}]",

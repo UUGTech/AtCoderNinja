@@ -5,7 +5,8 @@ use crate::{
 use anyhow::Result;
 use reqwest::{header::HeaderMap, Client};
 
-pub struct ACS {
+#[allow(clippy::upper_case_acronyms)]
+pub struct ACN {
     pub config_map: ConfigMap,
     pub config_str_map: ConfigStrMap,
     pub client: Client,
@@ -14,7 +15,7 @@ pub struct ACS {
 
 const USER_AGENT: &str = "ac-ninja";
 
-impl ACS {
+impl ACN {
     pub async fn new() -> Result<Self> {
         let config_map: ConfigMap = get_config()?;
         let config_str_map = config_map.to_hash_map_string();
@@ -25,19 +26,19 @@ impl ACS {
             .unwrap();
         let cookies = get_local_session()?;
         if cookies.is_some() {
-            return Ok(ACS {
+            Ok(ACN {
                 config_map,
                 config_str_map,
                 client,
                 cookies,
-            });
+            })
         } else {
-            return Ok(ACS {
+            Ok(ACN {
                 config_map,
                 config_str_map,
                 client,
                 cookies: None,
-            });
+            })
         }
     }
 }
