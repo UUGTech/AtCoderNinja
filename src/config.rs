@@ -28,12 +28,13 @@ const DEFAULT_CONFIG: &str =
 # execute_command:      プログラムを実行するためのコマンドです.
 # --------------------------------------------------------------------------------------
 # language_id:          ac-ninjaでの提出に用いる言語のidです.
-#                       AtCoderの提出ページにて, ブラウザのディベロッパーツールから
-#                       確認できます. 例えばC++(GCC 9.2.1)の場合, 4003になります.
+#                       AtCoderの提出セレクトボックスをディベロッパーツールから見ることで
+#                       確認できますが, [早見表](https://github.com/UUGTech/AtCoderNinja/blob/main/LANG_ID.md)が便利です.
 # --------------------------------------------------------------------------------------
 # language_name:        language_idの代わりに, language_nameを指定することができます.
 #                       AtCoderの提出言語セレクトボックスの表示の通りに指定してください.
-#                       \"C++(GCC 9.2.1)\", \"Python (3.8.2)\", \"Rust (1.42.0)\"など
+#                       \"C++(GCC 9.2.1)\", \"Python (3.8.2)\", \"Rust (1.42.0)\"など.
+#                       こちらも, [早見表](https://github.com/UUGTech/AtCoderNinja/blob/main/LANG_ID.md)の文字列をコピペすると便利です.
 # --------------------------------------------------------------------------------------
 # ファイルパスや, 実行コマンドには{{変数}}を含むことができます.
 # {{contest_type}}, {{contest_id}}, {{problem_id}}以外の変数は
@@ -55,6 +56,7 @@ const DEFAULT_CONFIG: &str =
 # source_file_path = \"{{contest_dir}}/{{problem_id}}.cpp\"
 # compile_command = \"g++ {{source_file_path}} -std=c++17 -o {{output_file_path}}\"
 # execute_command = \"{{output_file_path}}\"
+# language_id = 4003
 
 ";
 
