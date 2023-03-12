@@ -219,14 +219,8 @@ fn get_submission_info_from_row(row: &ElementRef) -> Result<Submission> {
         .as_text()
         .unwrap()
         .to_string();
-    let score_parent = iter
-        .next()
-        .unwrap();
-    let id = score_parent
-        .value()
-        .attr("data-id")
-        .unwrap()
-        .to_string();
+    let score_parent = iter.next().unwrap();
+    let id = score_parent.value().attr("data-id").unwrap().to_string();
     let score = score_parent
         .first_child()
         .unwrap()
@@ -260,7 +254,8 @@ fn get_submission_info_from_row(row: &ElementRef) -> Result<Submission> {
 fn make_submission_display(submission: &Submission) -> String {
     let tate = " | ".blue();
     let score = format!("score: {}", submission.score);
-    format!("{}{}{}{}{}{}{}{}{}{}",
+    format!(
+        "{}{}{}{}{}{}{}{}{}{}",
         submission.time,
         tate,
         submission.name.green(),
@@ -270,7 +265,8 @@ fn make_submission_display(submission: &Submission) -> String {
         submission.lang,
         tate,
         score,
-        tate)
+        tate
+    )
 }
 
 pub async fn ac_submit(
