@@ -163,10 +163,9 @@ pub fn get_local_session() -> Result<Option<HeaderMap>> {
 struct Submission {
     time: String,
     name: String,
-    #[allow(dead_code)]
     username: String,
-    #[allow(dead_code)]
     lang: String,
+    score: String,
     id: String,
     status_str: String,
 }
@@ -220,11 +219,13 @@ fn get_submission_info_from_row(row: &ElementRef) -> Result<Submission> {
         .as_text()
         .unwrap()
         .to_string();
-    let id = iter
-        .next()
+    let score_parent = iter.next().unwrap();
+    let id = score_parent.value().attr("data-id").unwrap().to_string();
+    let score = score_parent
+        .first_child()
         .unwrap()
         .value()
-        .attr("data-id")
+        .as_text()
         .unwrap()
         .to_string();
     iter.next();
@@ -244,13 +245,28 @@ fn get_submission_info_from_row(row: &ElementRef) -> Result<Submission> {
         name,
         username,
         lang,
+        score,
         id,
         status_str,
     })
 }
 
 fn make_submission_display(submission: &Submission) -> String {
-    format!("{} | {}", submission.time, submission.name)
+    let tate = " | ".blue();
+    let score = format!("score: {}", submission.score);
+    format!(
+        "{}{}{}{}{}{}{}{}{}{}",
+        submission.time,
+        tate,
+        submission.name.green(),
+        tate,
+        submission.username,
+        tate,
+        submission.lang,
+        tate,
+        score,
+        tate
+    )
 }
 
 pub async fn ac_submit(
@@ -314,11 +330,11 @@ pub async fn ac_submit(
     let mut submission_id: Option<u64> = None;
     let mut all: u64 = 5000;
     let mut done: u64 = 0;
-    let bar_init_style = ProgressStyle::with_template("{msg} {bar:20.green/blue}")
+    let bar_init_style = ProgressStyle::with_template("{msg} {bar:80.green/white}")
         .unwrap()
         .progress_chars("##-");
     let bar_progress_style =
-        ProgressStyle::with_template("{msg} {bar:20.green/blue} {pos:>3}/{len:>3}")
+        ProgressStyle::with_template("{msg} {bar:80.green/white} {pos:>3}/{len:>3}")
             .unwrap()
             .progress_chars("##-");
     let bar_finish_style = ProgressStyle::with_template("{msg}")
@@ -393,7 +409,7 @@ pub async fn ac_submit(
                 finish = true;
             }
             let msg = format!(
-                "{} | {}",
+                "{}  [ {} ]\n",
                 make_submission_display(&submission),
                 status.as_display_string().reverse()
             );
@@ -425,7 +441,7 @@ pub async fn ac_submit(
                 pb.tick();
             }
             let msg = format!(
-                "{} | {}",
+                "{}  [ {} ]\n",
                 make_submission_display(&submission),
                 status.as_display_string().reverse()
             );
