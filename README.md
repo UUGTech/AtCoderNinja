@@ -1,6 +1,11 @@
 # AtCoderNinja
 
-サンプルケースの自動実行・サンプルケースでACの際の自動提出を可能にするCLIです.
+サンプルケースの自動実行・ACであれば自動提出を可能にするCLIです.
+
+設定の仕方によって, C++やPythonなど, 様々な言語での環境に対応することができます.
+
+このプロジェクトは開発段階です.
+気になる点があったら, [issue](https://github.com/UUGTech/AtCoderNinja/issues)や[pull request](https://github.com/UUGTech/AtCoderNinja/pulls)にお願いします!
 
 ## インストール
 
