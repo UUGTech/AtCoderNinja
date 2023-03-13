@@ -72,3 +72,16 @@ pub fn lang_to_id(lang_name: &str) -> Result<i64> {
         _ => Err(anyhow!("Unknown language name error.")),
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_lang_to_id() {
+        assert_eq!(4003, lang_to_id("C++ (GCC 9.2.1)").unwrap());
+        assert_eq!(4067, lang_to_id("Vim (8.2.0460)").unwrap());
+        assert!(lang_to_id("Vim").is_err());
+    }
+}
+
