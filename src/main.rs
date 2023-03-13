@@ -112,7 +112,7 @@ async fn main() -> Result<()> {
         execute_with_manual_input(&problem_str_info, &acn.config_str_map)?;
         return Ok(());
     }
-    let samples = get_sample_cases(&problem_str_info).await?;
+    let samples = get_sample_cases(&problem_str_info, &acn).await?;
     let sample_results = sample_check(
         &problem_str_info,
         &samples,

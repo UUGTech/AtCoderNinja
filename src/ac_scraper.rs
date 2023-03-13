@@ -460,9 +460,16 @@ pub async fn ac_submit(
     Ok(())
 }
 
-pub async fn get_sample_cases(problem_str_info: &ProblemStrInfo) -> reqwest::Result<Samples> {
+pub async fn get_sample_cases(
+    problem_str_info: &ProblemStrInfo,
+    acn: &ACN,
+) -> reqwest::Result<Samples> {
     let contest_url = str_format(CONTEST_URL.to_string(), problem_str_info);
-    let body = reqwest::get(contest_url)
+    let body = acn
+        .client
+        .get(contest_url)
+        .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
+        .send()
         .await?
         .error_for_status()?
         .text()
