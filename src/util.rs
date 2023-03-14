@@ -51,7 +51,6 @@ pub fn str_format(format_string: String, vals: &HashMap<String, String>) -> Stri
     res
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -98,4 +97,3 @@ mod test {
         assert!(args.is_empty());
     }
 }
-

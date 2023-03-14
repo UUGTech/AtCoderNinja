@@ -19,7 +19,7 @@ use shellexpand::full;
 
 use crate::{
     check_samples::Status,
-    config::{ConfigMap, ConfigStrMap, ProblemStrInfo, ProblemInfo},
+    config::{ConfigMap, ConfigStrMap, ProblemInfo, ProblemStrInfo},
     data::ACN,
     util::str_format,
 };
@@ -57,7 +57,7 @@ fn problem_id_to_index(id: &str) -> Result<usize> {
     }
 }
 
-pub async fn add_task_name_to_problem_info (
+pub async fn add_task_name_to_problem_info(
     acn: &ACN,
     mut problem_info: ProblemInfo,
     mut problem_str_info: ProblemStrInfo,
@@ -105,7 +105,11 @@ pub async fn add_task_name_to_problem_info (
         }
     }
 
-    Err(anyhow!("Couldn't find {} problem in {}", config_id.to_uppercase(), tasks_url))
+    Err(anyhow!(
+        "Couldn't find {} problem in {}",
+        config_id.to_uppercase(),
+        tasks_url
+    ))
 }
 
 async fn get_csrf_token(acn: &ACN, url: &str) -> Result<String> {

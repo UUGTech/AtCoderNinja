@@ -322,7 +322,8 @@ pub async fn get_problem_info_from_path(
                     task_screen_name: "".into(),
                 };
                 let problem_str_info = get_problem_str_info(&problem_info);
-                let (problem_info, problem_str_info) = add_task_name_to_problem_info(acn, problem_info, problem_str_info).await?;
+                let (problem_info, problem_str_info) =
+                    add_task_name_to_problem_info(acn, problem_info, problem_str_info).await?;
                 return Ok((problem_info, problem_str_info));
             }
         }
