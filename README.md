@@ -15,6 +15,16 @@
 cargo install --git https://github.com/UUGTech/AtCoderNinja
 ```
 
+これで, `ac-ninja`コマンドが使えるようになります.
+
+### **おススメ**
+
+`.bashrc`などで,`acn`などのエイリアスを用意すると, コンテスト参加中のタイプ数が減って嬉しいです.
+
+```bash
+alias acn='ac-ninja'
+```
+
 ## アンインストール
 
 以下のコマンドでアンインストールできます
