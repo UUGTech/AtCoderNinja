@@ -25,13 +25,13 @@ use crate::{
 };
 
 const PARSE_ERROR: &str = "Parse error occurred in getting samples.";
-const INPUT_HEADERS: [&str; 2] = ["Sample Input", "入力例"];
-const OUTPUT_HEADERS: [&str; 2] = ["Sample Output", "出力例"];
-const CONTEST_URL: &str = "https://atcoder.jp/contests/{{contest_type}}{{contest_id}}/tasks/{{contest_type}}{{contest_id}}_{{problem_id}}";
-const SUBMIT_URL: &str = "https://atcoder.jp/contests/{{contest_type}}{{contest_id}}/submit";
-const TASK_SCREEN_NAME: &str = "{{contest_type}}{{contest_id}}_{{problem_id}}";
+const INPUT_HEADER: &str = "入力例";
+const OUTPUT_HEADER: &str = "出力例";
+const PROBLEM_URL: &str = "https://atcoder.jp/contests/{{contest_type}}{{contest_id_0_pad}}/tasks/{{contest_type}}{{contest_id_0_pad}}_{{problem_id}}?lang=ja";
+const SUBMIT_URL: &str = "https://atcoder.jp/contests/{{contest_type}}{{contest_id_0_pad}}/submit";
+const TASK_SCREEN_NAME: &str = "{{contest_type}}{{contest_id_0_pad}}_{{problem_id}}";
 const SUBMISSIONS_URL: &str =
-    "https://atcoder.jp/contests/{{contest_type}}{{contest_id}}/submissions/me";
+    "https://atcoder.jp/contests/{{contest_type}}{{contest_id_0_pad}}/submissions/me";
 const LOGIN_URL: &str = "https://atcoder.jp/login";
 const LOCAL_SESSION_PATH: &str = "~/.ac-ninja/session.txt";
 const LOCAL_DIR: &str = "~/.ac-ninja";
@@ -464,10 +464,10 @@ pub async fn get_sample_cases(
     problem_str_info: &ProblemStrInfo,
     acn: &ACN,
 ) -> reqwest::Result<Samples> {
-    let contest_url = str_format(CONTEST_URL.to_string(), problem_str_info);
+    let problem_url = str_format(PROBLEM_URL.to_string(), problem_str_info);
     let body = acn
         .client
-        .get(contest_url)
+        .get(problem_url)
         .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
         .send()
         .await?
@@ -495,8 +495,8 @@ pub async fn get_sample_cases(
             .next()
             .expect(PARSE_ERROR);
         let h3_content = h3_element.text().next().expect(PARSE_ERROR);
-        let is_input = INPUT_HEADERS.iter().any(|&h| h3_content.contains(h));
-        let is_output = OUTPUT_HEADERS.iter().any(|&h| h3_content.contains(h));
+        let is_input = h3_content.contains(INPUT_HEADER);
+        let is_output = h3_content.contains(OUTPUT_HEADER);
         if is_input {
             inputs.push(pre_content.into());
         } else if is_output {
