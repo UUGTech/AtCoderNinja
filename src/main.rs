@@ -105,8 +105,8 @@ async fn main() -> Result<()> {
 
     let cli_args = cli.args.unwrap();
 
-    let problem_info = get_problem_info_from_path(&acn.config_str_map, cli_args.problem_id_arg)?;
-    let problem_str_info = get_problem_str_info(&problem_info);
+    let (_, problem_str_info) = get_problem_info_from_path(&acn, &acn.config_str_map, cli_args.problem_id_arg).await?;
+    // let problem_str_info = get_problem_str_info(&problem_info);
 
     if cli_args.insert {
         execute_with_manual_input(&problem_str_info, &acn.config_str_map)?;
