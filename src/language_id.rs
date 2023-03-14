@@ -84,4 +84,3 @@ mod test {
         assert!(lang_to_id("Vim").is_err());
     }
 }
-

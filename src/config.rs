@@ -2,6 +2,8 @@ use anyhow::{anyhow, Context, Result};
 use std::fmt;
 use std::{collections::HashMap, env, fs, io::Write};
 
+use crate::ac_scraper::add_task_name_to_problem_info;
+use crate::data::ACN;
 use crate::language_id::lang_to_id;
 use crate::util::*;
 
@@ -108,41 +110,6 @@ impl fmt::Display for ConfigValue {
         }
     }
 }
-
-// impl ConfigValue {
-//     pub fn to_string(&self) -> String {
-//         match self {
-//             ConfigValue::String(s) => s.clone(),
-//             ConfigValue::Integer(i) => i.to_string(),
-//             ConfigValue::Float(f) => f.to_string(),
-//             ConfigValue::Boolean(b) => b.to_string(),
-//             ConfigValue::Vector(arr) => {
-//                 let mut buf = String::new();
-//                 buf.push('[');
-//                 for v in arr {
-//                     buf.push_str(v.to_string().as_str());
-//                     buf.push_str(", ");
-//                 }
-//                 if !arr.is_empty() {
-//                     buf.pop();
-//                     buf.pop();
-//                 }
-//                 buf.push(']');
-//                 buf
-//             }
-//             ConfigValue::Map(mp) => {
-//                 let mut buf = String::new();
-//                 for (k, v) in mp {
-//                     buf.push('\"');
-//                     buf.push_str(k);
-//                     buf.push_str(" = ");
-//                     buf.push_str(v.to_string().as_str());
-//                 }
-//                 buf
-//             }
-//         }
-//     }
-// }
 
 trait PushConfigValue {
     fn push_string(&mut self, value: String);
@@ -320,18 +287,20 @@ struct ExecuteCommand {
 
 #[derive(Debug)]
 pub struct ProblemInfo {
-    contest_type: ContestType,
-    contest_id: i64,
-    problem_id: char,
+    pub contest_type: ContestType,
+    pub contest_id: i64,
+    pub problem_id: char,
+    pub task_screen_name: String,
 }
 
 pub type ProblemStrInfo = HashMap<String, String>;
 
 // configで定めた通りのファイルの時のみ
-pub fn get_problem_info_from_path(
+pub async fn get_problem_info_from_path(
+    acn: &ACN,
     config_str_map: &HashMap<String, String>,
     problem_id: char,
-) -> Result<ProblemInfo> {
+) -> Result<(ProblemInfo, ProblemStrInfo)> {
     let current_dir = env::current_dir()?.to_str().unwrap().to_string();
     let config_dir = str_format(config_str_map["contest_dir"].clone(), config_str_map);
 
@@ -346,12 +315,16 @@ pub fn get_problem_info_from_path(
             );
             let cand = str_format(config_dir.clone(), &mp);
             if cand == current_dir {
-                let res = ProblemInfo {
+                let problem_info = ProblemInfo {
                     contest_type: ContestType::from_str(contest_type).unwrap(),
                     contest_id,
                     problem_id,
+                    task_screen_name: "".into(),
                 };
-                return Ok(res);
+                let problem_str_info = get_problem_str_info(&problem_info);
+                let (problem_info, problem_str_info) =
+                    add_task_name_to_problem_info(acn, problem_info, problem_str_info).await?;
+                return Ok((problem_info, problem_str_info));
             }
         }
     }
@@ -360,7 +333,7 @@ pub fn get_problem_info_from_path(
     Err(wrong_dir_error)
 }
 
-pub fn get_problem_str_info(problem_info: &ProblemInfo) -> HashMap<String, String> {
+fn get_problem_str_info(problem_info: &ProblemInfo) -> HashMap<String, String> {
     let mut buf: HashMap<String, String> = HashMap::new();
     buf.insert(
         "contest_type".to_string(),

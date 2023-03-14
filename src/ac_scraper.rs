@@ -19,7 +19,7 @@ use shellexpand::full;
 
 use crate::{
     check_samples::Status,
-    config::{ConfigMap, ConfigStrMap, ProblemStrInfo},
+    config::{ConfigMap, ConfigStrMap, ProblemInfo, ProblemStrInfo},
     data::ACN,
     util::str_format,
 };
@@ -27,9 +27,9 @@ use crate::{
 const PARSE_ERROR: &str = "Parse error occurred in getting samples.";
 const INPUT_HEADER: &str = "入力例";
 const OUTPUT_HEADER: &str = "出力例";
-const PROBLEM_URL: &str = "https://atcoder.jp/contests/{{contest_type}}{{contest_id_0_pad}}/tasks/{{contest_type}}{{contest_id_0_pad}}_{{problem_id}}?lang=ja";
+const TASKS_URL: &str = "https://atcoder.jp/contests/{{contest_type}}{{contest_id_0_pad}}/tasks";
+const PROBLEM_URL: &str = "https://atcoder.jp/contests/{{contest_type}}{{contest_id_0_pad}}/tasks/{{task_screen_name}}?lang=ja";
 const SUBMIT_URL: &str = "https://atcoder.jp/contests/{{contest_type}}{{contest_id_0_pad}}/submit";
-const TASK_SCREEN_NAME: &str = "{{contest_type}}{{contest_id_0_pad}}_{{problem_id}}";
 const SUBMISSIONS_URL: &str =
     "https://atcoder.jp/contests/{{contest_type}}{{contest_id_0_pad}}/submissions/me";
 const LOGIN_URL: &str = "https://atcoder.jp/login";
@@ -40,6 +40,76 @@ pub struct Samples {
     pub inputs: Vec<String>,
     pub outputs: Vec<String>,
     pub size: usize,
+}
+
+fn problem_id_to_index(id: &str) -> Result<usize> {
+    match id {
+        "a" => Ok(0),
+        "b" => Ok(1),
+        "c" => Ok(2),
+        "d" => Ok(3),
+        "e" => Ok(4),
+        "f" => Ok(5),
+        "g" => Ok(6),
+        "h" => Ok(7),
+        "ex" => Ok(7),
+        _ => Err(anyhow!("Failed to convert problem_id to problem index")),
+    }
+}
+
+pub async fn add_task_name_to_problem_info(
+    acn: &ACN,
+    mut problem_info: ProblemInfo,
+    mut problem_str_info: ProblemStrInfo,
+) -> Result<(ProblemInfo, ProblemStrInfo)> {
+    let tasks_url = str_format(TASKS_URL.to_string(), &problem_str_info);
+    let body = acn
+        .client
+        .get(tasks_url.clone())
+        .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
+        .send()
+        .await?
+        .error_for_status()?
+        .text()
+        .await?;
+    let doc = Html::parse_document(&body);
+
+    let selctor = Selector::parse("table tbody tr td:nth-child(1)").unwrap();
+    let tds = doc.select(&selctor);
+    let config_id = problem_str_info.get("problem_id").unwrap();
+    for td in tds {
+        let id = td
+            .first_child()
+            .unwrap()
+            .first_child()
+            .unwrap()
+            .value()
+            .as_text()
+            .unwrap()
+            .to_lowercase();
+        let href = td
+            .first_child()
+            .unwrap()
+            .value()
+            .as_element()
+            .unwrap()
+            .attr("href")
+            .unwrap();
+        let now_idx = problem_id_to_index(&id)?;
+        let config_idx = problem_id_to_index(config_id)?;
+        if now_idx == config_idx {
+            let task_screen_name: String = href.split('/').last().unwrap().to_string();
+            problem_info.task_screen_name = task_screen_name.clone();
+            problem_str_info.insert("task_screen_name".to_string(), task_screen_name);
+            return Ok((problem_info, problem_str_info));
+        }
+    }
+
+    Err(anyhow!(
+        "Couldn't find {} problem in {}",
+        config_id.to_uppercase(),
+        tasks_url
+    ))
 }
 
 async fn get_csrf_token(acn: &ACN, url: &str) -> Result<String> {
@@ -289,7 +359,7 @@ pub async fn ac_submit(
     let submit_url = str_format(SUBMIT_URL.to_string(), &data_map);
     let csrf_token: String = get_csrf_token(acn, submit_url.as_str()).await?;
 
-    let task_screen_name = str_format(TASK_SCREEN_NAME.to_string(), &data_map);
+    let task_screen_name = problem_str_info.get("task_screen_name").unwrap();
     let params = [
         ("data.TaskScreenName", task_screen_name.as_str()),
         (
