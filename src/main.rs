@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use ac_scraper::*;
 use anyhow::Result;
 use check_samples::*;
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use colored::*;
 use config::*;
 use data::*;
@@ -33,34 +33,79 @@ struct Cli {
 }
 
 #[derive(Debug, Args)]
-struct GlobalArgs {
+pub struct GlobalArgs {
     /// Without submit, only test samples
     #[arg(short, long)]
-    local: bool,
+    pub local: bool,
 
     /// Force to submit, even if ther result of the samples is not AC
     #[arg(short, long)]
-    force: bool,
+    pub force: bool,
 
     /// Manual input  ** This option don't allow to submit **
     #[arg(short, long)]
-    insert: bool,
+    pub insert: bool,
 
-    /// Problem_id ex: a, b, c ...
+    /// (Required)
     #[arg(name = "PROBLEM_ID")]
-    problem_id_arg: char,
+    pub problem_id_arg: ProblemIdArg,
 
-    /// [WIP] Source file to be submitted
-    #[arg(name = "FILE")]
-    source_file: Option<PathBuf>,
+    /// (Optional) Source file [If you specify source_file, ac-ninja will use the given value to override your config.]
+    #[arg(name = "SOURCE_FILE")]
+    pub source_file: Option<PathBuf>,
 
-    /// [WIP] abc, arc or agc
-    #[arg(name = "CONTEST_TYPE")]
-    contest_type_arg: Option<String>,
+    /// If you're not in configured directory as {{contest_dir}}, you need to specify
+    /// contest_type and contest_id.
+    #[clap(value_enum, long = "type", short = 't', name = "CONTEST_TYPE")]
+    pub contest_type_arg: Option<ContestTypeArg>,
 
-    /// [WIP] contest_id ex:1, 260, ...
-    #[arg(name = "CONTEST_ID")]
-    contest_id_arg: Option<i64>,
+    /// [possible values: 1, 2, 3, ... ]
+    #[arg(long = "id", short = 'I', name = "CONTEST_ID")]
+    pub contest_id_arg: Option<i64>,
+}
+
+#[derive(Debug, Clone, ValueEnum)]
+pub enum ContestTypeArg {
+    Abc,
+    Arc,
+    Agc,
+}
+
+#[derive(Debug, Clone, ValueEnum)]
+pub enum ProblemIdArg {
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+}
+
+impl ProblemIdArg {
+    pub fn as_char(&self) -> char {
+        match &self {
+            ProblemIdArg::A => 'a',
+            ProblemIdArg::B => 'b',
+            ProblemIdArg::C => 'c',
+            ProblemIdArg::D => 'd',
+            ProblemIdArg::E => 'e',
+            ProblemIdArg::F => 'f',
+            ProblemIdArg::G => 'g',
+            ProblemIdArg::H => 'h',
+        }
+    }
+}
+
+impl ContestTypeArg {
+    pub fn as_str(&self) -> String {
+        match &self {
+            ContestTypeArg::Abc => "abc".to_string(),
+            ContestTypeArg::Arc => "arc".to_string(),
+            ContestTypeArg::Agc => "agc".to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Subcommand)]
@@ -74,7 +119,7 @@ enum MiniCommand {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
-    let mut acn = ACN::new().await?;
+    let mut acn = ACN::new(&cli.args).await?;
 
     if let Some(subcommand) = cli.subcommand {
         match subcommand {
@@ -105,9 +150,13 @@ async fn main() -> Result<()> {
 
     let cli_args = cli.args.unwrap();
 
-    let (_, problem_str_info) =
-        get_problem_info_from_path(&acn, &acn.config_str_map, cli_args.problem_id_arg).await?;
-    // let problem_str_info = get_problem_str_info(&problem_info);
+    let (_, problem_str_info) = get_problem_info_from_path(
+        &acn,
+        &acn.config_str_map,
+        cli_args.problem_id_arg.as_char(),
+        &cli_args,
+    )
+    .await?;
 
     if cli_args.insert {
         execute_with_manual_input(&problem_str_info, &acn.config_str_map)?;

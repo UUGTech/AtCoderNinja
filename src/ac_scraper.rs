@@ -530,10 +530,7 @@ pub async fn ac_submit(
     Ok(())
 }
 
-pub async fn get_sample_cases(
-    problem_str_info: &ProblemStrInfo,
-    acn: &ACN,
-) -> reqwest::Result<Samples> {
+pub async fn get_sample_cases(problem_str_info: &ProblemStrInfo, acn: &ACN) -> Result<Samples> {
     let problem_url = str_format(PROBLEM_URL.to_string(), problem_str_info);
     let body = acn
         .client
@@ -555,16 +552,16 @@ pub async fn get_sample_cases(
     let mut outputs: Vec<String> = Vec::new();
 
     for pre_element in pre_elements {
-        let pre_content = pre_element.text().next().expect(PARSE_ERROR);
+        let pre_content = pre_element.text().next().context(PARSE_ERROR)?;
         let parent_element = pre_element
             .parent()
             .and_then(ElementRef::wrap)
-            .expect(PARSE_ERROR);
+            .context(PARSE_ERROR)?;
         let h3_element = parent_element
             .select(&h3_selector)
             .next()
-            .expect(PARSE_ERROR);
-        let h3_content = h3_element.text().next().expect(PARSE_ERROR);
+            .context(PARSE_ERROR)?;
+        let h3_content = h3_element.text().next().context(PARSE_ERROR)?;
         let is_input = h3_content.contains(INPUT_HEADER);
         let is_output = h3_content.contains(OUTPUT_HEADER);
         if is_input {
