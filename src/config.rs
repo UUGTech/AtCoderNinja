@@ -5,7 +5,7 @@ use std::{collections::HashMap, env, fs, io::Write};
 use crate::ac_scraper::add_task_name_to_problem_info;
 use crate::data::ACN;
 use crate::language_id::lang_to_id;
-use crate::util::*;
+use crate::{util::*, GlobalArgs};
 
 use serde::{Deserialize, Serialize};
 use shellexpand::full;
@@ -257,34 +257,6 @@ impl ContestType {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct SourceFilePath {
-    work_space: String,
-    contest_type: String,
-    contest_id: String,
-    problem_id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct OutputFilePath {
-    work_space: String,
-    contest_type: String,
-    contest_id: String,
-    problem_id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct CompileCommand {
-    source_file_path: String,
-    output_file_path: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct ExecuteCommand {
-    source_file_path: String,
-    output_file_path: String,
-}
-
 #[derive(Debug)]
 pub struct ProblemInfo {
     pub contest_type: ContestType,
@@ -300,33 +272,47 @@ pub async fn get_problem_info_from_path(
     acn: &ACN,
     config_str_map: &HashMap<String, String>,
     problem_id: char,
+    args: &GlobalArgs,
 ) -> Result<(ProblemInfo, ProblemStrInfo)> {
     let current_dir = env::current_dir()?.to_str().unwrap().to_string();
     let config_dir = str_format(config_str_map["contest_dir"].clone(), config_str_map);
 
-    for contest_type in ["abc", "arc", "agc"] {
-        for contest_id in 0i64..999i64 {
+    let mut contest_type: Option<String> = if args.contest_type_arg.is_some() {
+        Some(args.contest_type_arg.clone().unwrap().as_str())
+    } else {
+        None
+    };
+    let mut contest_id = args.contest_id_arg;
+
+    for ct in ["abc", "arc", "agc"] {
+        for ci in 0i64..999i64 {
             let mut mp: HashMap<String, String> = HashMap::new();
-            mp.insert("contest_type".to_string(), contest_type.to_string());
-            mp.insert("contest_id".to_string(), contest_id.to_string());
-            mp.insert(
-                "contest_id_0_pad".to_string(),
-                format!("{:0>3}", contest_id),
-            );
+            mp.insert("contest_type".to_string(), ct.to_string());
+            mp.insert("contest_id".to_string(), ci.to_string());
+            mp.insert("contest_id_0_pad".to_string(), format!("{:0>3}", ci));
             let cand = str_format(config_dir.clone(), &mp);
             if cand == current_dir {
-                let problem_info = ProblemInfo {
-                    contest_type: ContestType::from_str(contest_type).unwrap(),
-                    contest_id,
-                    problem_id,
-                    task_screen_name: "".into(),
-                };
-                let problem_str_info = get_problem_str_info(&problem_info);
-                let (problem_info, problem_str_info) =
-                    add_task_name_to_problem_info(acn, problem_info, problem_str_info).await?;
-                return Ok((problem_info, problem_str_info));
+                if contest_type.is_none() {
+                    contest_type = Some(ct.to_string());
+                }
+                if contest_id.is_none() {
+                    contest_id = Some(ci);
+                }
             }
         }
+    }
+
+    if contest_type.is_some() && contest_id.is_some() {
+        let problem_info = ProblemInfo {
+            contest_type: ContestType::from_str(contest_type.unwrap().as_str()).unwrap(),
+            contest_id: contest_id.unwrap(),
+            problem_id,
+            task_screen_name: "".into(),
+        };
+        let problem_str_info = get_problem_str_info(&problem_info);
+        let (problem_info, problem_str_info) =
+            add_task_name_to_problem_info(acn, problem_info, problem_str_info).await?;
+        return Ok((problem_info, problem_str_info));
     }
 
     let wrong_dir_error: anyhow::Error = anyhow!("If you are not in the directory configured, you need to specify the problem information with options.");
@@ -355,7 +341,7 @@ fn get_problem_str_info(problem_info: &ProblemInfo) -> HashMap<String, String> {
     buf
 }
 
-pub fn get_config() -> Result<ConfigMap> {
+pub fn get_config(args: &Option<GlobalArgs>) -> Result<ConfigMap> {
     let path_string = full(CONFIG_DIR)?.to_string();
     let path = Path::new(path_string.as_str());
     if !path.is_dir() {
@@ -376,7 +362,22 @@ pub fn get_config() -> Result<ConfigMap> {
 
     let config_str = fs::read_to_string(path)?;
 
-    let config_toml: toml::Table = toml::from_str(&config_str)?;
+    let mut config_toml: toml::Table = toml::from_str(&config_str)?;
+    if let Some(args) = args {
+        if let Some(source_file_path) = args.source_file.clone() {
+            let source_file_path = source_file_path.canonicalize()?;
+            let new_value = toml::Value::String(source_file_path.to_str().unwrap().to_string());
+            match config_toml.get("source_file_path") {
+                Some(_) => {
+                    config_toml["source_file_path"] = new_value;
+                }
+                None => {
+                    config_toml.insert("source_file_path".to_string(), new_value);
+                }
+            }
+        }
+    }
+
     let config_map = toml_into_config_map(config_toml, ConfigMap::new());
 
     let config_map = config_check(config_map)?;

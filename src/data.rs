@@ -1,6 +1,7 @@
 use crate::{
     ac_scraper::get_local_session,
     config::{get_config, ConfigMap, ConfigStrMap, ToHashMapString},
+    GlobalArgs,
 };
 use anyhow::Result;
 use reqwest::{header::HeaderMap, Client};
@@ -16,8 +17,8 @@ pub struct ACN {
 const USER_AGENT: &str = "ac-ninja";
 
 impl ACN {
-    pub async fn new() -> Result<Self> {
-        let config_map: ConfigMap = get_config()?;
+    pub async fn new(args: &Option<GlobalArgs>) -> Result<Self> {
+        let config_map: ConfigMap = get_config(args)?;
         let config_str_map = config_map.to_hash_map_string();
         let client = Client::builder()
             .user_agent(USER_AGENT)
