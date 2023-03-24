@@ -403,8 +403,15 @@ pub async fn ac_submit(
     let bar_init_style = ProgressStyle::with_template("{msg} {bar:80.green/white}")
         .unwrap()
         .progress_chars("##-");
-    let bar_progress_style =
+    let bar_green_style =
         ProgressStyle::with_template("{msg} {bar:80.green/white} {pos:>3}/{len:>3}")
+            .unwrap()
+            .progress_chars("##-");
+    let bar_red_style = ProgressStyle::with_template("{msg} {bar:80.red/white} {pos:>3}/{len:>3}")
+        .unwrap()
+        .progress_chars("##-");
+    let bar_yellow_style =
+        ProgressStyle::with_template("{msg} {bar:80.yellow/white} {pos:>3}/{len:>3}")
             .unwrap()
             .progress_chars("##-");
     let bar_finish_style = ProgressStyle::with_template("{msg}")
@@ -464,7 +471,12 @@ pub async fn ac_submit(
             submission_id = Some(submission.id.parse::<u64>().unwrap());
             let status = Status::from_table_str(&submission.status_str);
             if status != Status::WJ {
-                pb.set_style(bar_progress_style.clone());
+                let style = match status {
+                    Status::AC => bar_green_style.clone(),
+                    Status::WA => bar_red_style.clone(),
+                    _ => bar_yellow_style.clone(),
+                };
+                pb.set_style(style);
                 pb.tick();
             }
             if status.as_str() != submission.status_str {
@@ -507,7 +519,12 @@ pub async fn ac_submit(
                 finish = true;
             }
             if status != Status::WJ {
-                pb.set_style(bar_progress_style.clone());
+                let style = match status {
+                    Status::AC => bar_green_style.clone(),
+                    Status::WA => bar_red_style.clone(),
+                    _ => bar_yellow_style.clone(),
+                };
+                pb.set_style(style);
                 pb.tick();
             }
             let msg = format!(
