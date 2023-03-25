@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use colored::*;
 use std::fmt;
 use std::{collections::HashMap, env, fs, io::Write};
 
@@ -62,6 +63,7 @@ const DEFAULT_CONFIG: &str =
 # language_id = 4003
 
 ";
+const PROBLEM_INFO_PRINT_FORMAT: &str = "{{CONTEST_TYPE}} {{contest_id}} {{PROBLEM_ID}}";
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub enum ConfigValue {
@@ -339,6 +341,13 @@ fn get_problem_str_info(problem_info: &ProblemInfo) -> HashMap<String, String> {
     );
 
     buf
+}
+
+pub fn print_problem_info(problem_str_info: &ProblemStrInfo) -> Result<()> {
+    println!("{}", format!("{:-^30}", " Problem Information ").blue());
+    let s = str_format(PROBLEM_INFO_PRINT_FORMAT.to_string(), problem_str_info);
+    println!("{}", s);
+    Ok(())
 }
 
 pub fn get_config(args: &Option<GlobalArgs>) -> Result<ConfigMap> {

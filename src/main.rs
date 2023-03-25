@@ -158,6 +158,8 @@ async fn main() -> Result<()> {
     )
     .await?;
 
+    print_problem_info(&problem_str_info)?;
+
     if cli_args.insert {
         execute_with_manual_input(&problem_str_info, &acn.config_str_map)?;
         return Ok(());
