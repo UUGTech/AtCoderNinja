@@ -201,6 +201,7 @@ pub fn sample_check(
     println!("{}: {:?}", "Execute arguments".green(), args);
 
     for i in 0..samples.size {
+        let sample_id = samples.inputs[i].clone().0;
         let mut child = Command::new(command)
             .args(&args)
             .stdin(Stdio::piped())
@@ -208,7 +209,7 @@ pub fn sample_check(
             .spawn()
             .expect("Failed to run!");
         let mut stdin = child.stdin.take().expect("Failed to open stdin!");
-        let input: String = samples.inputs[i].clone();
+        let input: String = samples.inputs[i].clone().1;
         std::thread::spawn(move || {
             stdin
                 .write_all(input.as_bytes())
@@ -217,22 +218,22 @@ pub fn sample_check(
         let raw_output = child.wait_with_output().expect("Failed to read stdout!");
         let output_str = String::from_utf8_lossy(&raw_output.stdout).to_string();
 
-        let expected: String = samples.outputs[i].clone();
+        let expected: String = samples.outputs[i].clone().1;
 
         let status = if is_ac(&expected, &output_str) {
             Status::AC
         } else {
             total_status = Status::WA;
             failed_details.push(FailedDetail {
-                index: i,
-                input: samples.inputs[i].clone(),
+                index: sample_id,
+                input: samples.inputs[i].clone().1,
                 status: Status::WA,
                 expected,
                 output: output_str,
             });
             Status::WA
         };
-        table.add_row(row![c => (i+1), status.as_display_string()]);
+        table.add_row(row![c => sample_id, status.as_display_string()]);
     }
 
     table = add_total_status_to_table(table, &total_status);
