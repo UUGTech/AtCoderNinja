@@ -547,7 +547,11 @@ pub async fn ac_submit(
     Ok(())
 }
 
-pub async fn get_sample_cases(problem_str_info: &ProblemStrInfo, acn: &ACN, sample_case_id_arg: Option<usize>) -> Result<Samples> {
+pub async fn get_sample_cases(
+    problem_str_info: &ProblemStrInfo,
+    acn: &ACN,
+    sample_case_id_arg: Option<usize>,
+) -> Result<Samples> {
     let problem_url = str_format(PROBLEM_URL.to_string(), problem_str_info);
     let body = acn
         .client
@@ -582,11 +586,21 @@ pub async fn get_sample_cases(problem_str_info: &ProblemStrInfo, acn: &ACN, samp
         let is_input = h3_content.contains(INPUT_HEADER);
         let is_output = h3_content.contains(OUTPUT_HEADER);
         if is_input {
-            let index: usize = h3_content.chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap();
-            inputs.push( (index, pre_content.into()) );
+            let index: usize = h3_content
+                .chars()
+                .filter(|c| c.is_ascii_digit())
+                .collect::<String>()
+                .parse()
+                .unwrap();
+            inputs.push((index, pre_content.into()));
         } else if is_output {
-            let index: usize = h3_content.chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap();
-            outputs.push( (index, pre_content.into()) );
+            let index: usize = h3_content
+                .chars()
+                .filter(|c| c.is_ascii_digit())
+                .collect::<String>()
+                .parse()
+                .unwrap();
+            outputs.push((index, pre_content.into()));
         }
     }
     if sample_case_id_arg.is_some() {

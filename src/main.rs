@@ -179,7 +179,10 @@ async fn main() -> Result<()> {
         display_failed_detail(sample_results.failed_details);
     }
 
-    if (sample_results.total_status != Status::AC && !cli_args.force) || cli_args.local || cli_args.sample_case_id_arg.is_some() {
+    if (sample_results.total_status != Status::AC && !cli_args.force)
+        || cli_args.local
+        || cli_args.sample_case_id_arg.is_some()
+    {
         return Ok(());
     }
     ac_submit(
