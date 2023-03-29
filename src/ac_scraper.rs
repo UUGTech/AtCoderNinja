@@ -37,8 +37,8 @@ const LOCAL_SESSION_PATH: &str = "~/.ac-ninja/session.txt";
 const LOCAL_DIR: &str = "~/.ac-ninja";
 
 pub struct Samples {
-    pub inputs: Vec<String>,
-    pub outputs: Vec<String>,
+    pub inputs: Vec<(usize, String)>,
+    pub outputs: Vec<(usize, String)>,
     pub size: usize,
 }
 
@@ -547,7 +547,7 @@ pub async fn ac_submit(
     Ok(())
 }
 
-pub async fn get_sample_cases(problem_str_info: &ProblemStrInfo, acn: &ACN) -> Result<Samples> {
+pub async fn get_sample_cases(problem_str_info: &ProblemStrInfo, acn: &ACN, sample_case_id_arg: Option<usize>) -> Result<Samples> {
     let problem_url = str_format(PROBLEM_URL.to_string(), problem_str_info);
     let body = acn
         .client
@@ -565,8 +565,8 @@ pub async fn get_sample_cases(problem_str_info: &ProblemStrInfo, acn: &ACN) -> R
 
     let h3_selector = Selector::parse("h3").unwrap();
 
-    let mut inputs: Vec<String> = Vec::new();
-    let mut outputs: Vec<String> = Vec::new();
+    let mut inputs: Vec<(usize, String)> = Vec::new();
+    let mut outputs: Vec<(usize, String)> = Vec::new();
 
     for pre_element in pre_elements {
         let pre_content = pre_element.text().next().context(PARSE_ERROR)?;
@@ -582,10 +582,18 @@ pub async fn get_sample_cases(problem_str_info: &ProblemStrInfo, acn: &ACN) -> R
         let is_input = h3_content.contains(INPUT_HEADER);
         let is_output = h3_content.contains(OUTPUT_HEADER);
         if is_input {
-            inputs.push(pre_content.into());
+            let index: usize = h3_content.chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap();
+            inputs.push( (index, pre_content.into()) );
         } else if is_output {
-            outputs.push(pre_content.into());
+            let index: usize = h3_content.chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap();
+            outputs.push( (index, pre_content.into()) );
         }
+    }
+    if sample_case_id_arg.is_some() {
+        let target = sample_case_id_arg.unwrap();
+        println!("target: {}", target);
+        inputs = inputs.iter().filter(|&x| x.0 == target).cloned().collect();
+        outputs = outputs.iter().filter(|&x| x.0 == target).cloned().collect();
     }
 
     let size = match inputs.len() == outputs.len() {

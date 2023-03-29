@@ -62,6 +62,10 @@ pub struct GlobalArgs {
     /// [possible values: 1, 2, 3, ... ]
     #[arg(long = "id", short = 'I', name = "CONTEST_ID")]
     pub contest_id_arg: Option<i64>,
+
+    /// [possible values: 1, 2, 3, ... ]
+    #[arg(long = "sample", short = 's', name = "SAMPLE_CASE_ID")]
+    pub sample_case_id_arg: Option<usize>,
 }
 
 #[derive(Debug, Clone, ValueEnum)]
@@ -164,7 +168,7 @@ async fn main() -> Result<()> {
         execute_with_manual_input(&problem_str_info, &acn.config_str_map)?;
         return Ok(());
     }
-    let samples = get_sample_cases(&problem_str_info, &acn).await?;
+    let samples = get_sample_cases(&problem_str_info, &acn, cli_args.sample_case_id_arg.clone()).await?;
     let sample_results = sample_check(
         &problem_str_info,
         &samples,
@@ -175,7 +179,7 @@ async fn main() -> Result<()> {
         display_failed_detail(sample_results.failed_details);
     }
 
-    if (sample_results.total_status != Status::AC && !cli_args.force) || cli_args.local {
+    if (sample_results.total_status != Status::AC && !cli_args.force) || cli_args.local || cli_args.sample_case_id_arg.is_some() {
         return Ok(());
     }
     ac_submit(
