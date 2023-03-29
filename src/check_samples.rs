@@ -225,7 +225,7 @@ pub fn sample_check(
         } else {
             total_status = Status::WA;
             failed_details.push(FailedDetail {
-                index: sample_id.clone(),
+                index: sample_id,
                 input: samples.inputs[i].clone().1,
                 status: Status::WA,
                 expected,

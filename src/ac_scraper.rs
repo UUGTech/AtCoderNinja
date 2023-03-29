@@ -592,8 +592,8 @@ pub async fn get_sample_cases(problem_str_info: &ProblemStrInfo, acn: &ACN, samp
     if sample_case_id_arg.is_some() {
         let target = sample_case_id_arg.unwrap();
         println!("target: {}", target);
-        inputs = inputs.iter().filter(|&x| x.0 == target).cloned().collect();
-        outputs = outputs.iter().filter(|&x| x.0 == target).cloned().collect();
+        inputs.retain(|x| x.0 == target);
+        outputs.retain(|x| x.0 == target);
     }
 
     let size = match inputs.len() == outputs.len() {
