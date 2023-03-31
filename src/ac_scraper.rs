@@ -605,7 +605,6 @@ pub async fn get_sample_cases(
     }
     if sample_case_id_arg.is_some() {
         let target = sample_case_id_arg.unwrap();
-        println!("target: {}", target);
         inputs.retain(|x| x.0 == target);
         outputs.retain(|x| x.0 == target);
     }
