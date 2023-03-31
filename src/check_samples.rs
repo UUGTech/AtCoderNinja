@@ -251,7 +251,7 @@ pub fn display_failed_detail(failed_details: Vec<FailedDetail>) {
     table.set_format(*format::consts::FORMAT_BOX_CHARS);
     for detail in failed_details {
         table.add_row(row![
-            detail.index + 1,
+            detail.index,
             detail.input,
             detail.expected,
             detail.output
