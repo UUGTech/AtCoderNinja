@@ -1,6 +1,6 @@
 [package]
 name = "ac-ninja"
-version = "0.1.0"
+version = "0.1.1"
 author = "UG"
 about = "Simple CLI to have a good experience in AtCoder contests"
 edition = "2021"

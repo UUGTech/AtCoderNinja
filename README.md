@@ -7,6 +7,11 @@
 このプロジェクトは開発段階です.
 気になる点があったら, [issue](https://github.com/UUGTech/AtCoderNinja/issues)や[pull request](https://github.com/UUGTech/AtCoderNinja/pulls)にお願いします!
 
+## !!言語アップデート対応
+
+言語アップデートに対応しました。最新のmasterブランチにしてください。また、config内のlang_idやlang_nameを[LANG_ID一覧](./LANG_ID.md)に記載されているものに合わせてください。
+古いままだと提出が出来ません。
+
 ## インストール
 
 以下のコマンドでインストールできます
