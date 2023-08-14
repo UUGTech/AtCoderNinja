@@ -102,8 +102,8 @@ mod test {
 
     #[test]
     fn test_lang_to_id() {
-        assert_eq!(4003, lang_to_id("C++ (GCC 9.2.1)").unwrap());
-        assert_eq!(4067, lang_to_id("Vim (8.2.0460)").unwrap());
+        assert_eq!(5001, lang_to_id("C++ 20 (gcc 12.2)").unwrap());
+        assert_eq!(5002, lang_to_id("Go (go 1.20.6)").unwrap());
         assert!(lang_to_id("Vim").is_err());
     }
 }
