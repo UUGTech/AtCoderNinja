@@ -38,7 +38,7 @@ output_file_path = "{{contest_dir}}/a.out"
 source_file_path = "{{contest_dir}}/{{problem_id}}.cpp"
 compile_command = "g++ {{source_file_path}} -std=c++17 -o {{output_file_path}}"
 execute_command = "{{output_file_path}}"
-language_id = 4003      # language_nameの場合 "C++ (GCC 9.2.1)"
+language_id = 5001      # language_nameの場合 "C++ 20 (gcc 12.2)"
 ```
 
 以下はPythonでの設定例です
@@ -49,6 +49,6 @@ need_to_compile = false
 contest_dir = "{{work_space}}/{{CONTEST_TYPE}}/{{contest_id_0_pad}}"
 source_file_path = "{{contest_dir}}/{{problem_id}}/main.py"
 execute_command = "python3 {{source_file_path}}"
-language_name = "Python (3.8.2)"    # language_idの場合 4006
+language_name = "Python (CPython 3.11.4)"    # language_idの場合 5055
 ```
 
