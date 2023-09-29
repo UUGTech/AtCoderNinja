@@ -561,7 +561,8 @@ pub async fn get_sample_cases(
         .await?
         .error_for_status()?
         .text()
-        .await?;
+        .await
+        .with_context(|| "Failed to get sample cases. Please check you logged in and try again.")?;
     let doc = Html::parse_document(&body);
 
     let pre_selector = Selector::parse("pre").unwrap();
