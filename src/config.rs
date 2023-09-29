@@ -313,7 +313,11 @@ pub async fn get_problem_info_from_path(
         };
         let problem_str_info = get_problem_str_info(&problem_info);
         let (problem_info, problem_str_info) =
-            add_task_name_to_problem_info(acn, problem_info, problem_str_info).await?;
+            add_task_name_to_problem_info(acn, problem_info, problem_str_info)
+                .await
+                .with_context(|| {
+                    "Failed to get task name. Please check you logged in and the contest exists"
+                })?;
         return Ok((problem_info, problem_str_info));
     }
 
