@@ -1,16 +1,13 @@
 # 設定
 
-設定に必須な情報はcontest_dir, source_file_path, need_to_compile, execute_command,
-(language_id または language_name)です.
+設定に必須な情報はcontest_dir, source_file_path, need_to_compile, execute_commandです.
 
 | 項目 | 説明 |
 | --- | --- |
 | contest_dir | ac-ninjaを実行するディレクトリです.<br> {{contesty_type}},{{contest_id}}を特定できる必要があります. |
-| source_file_path | ac-ninjaで提出するファイルのパスです. |
+| source_file_path | ソースファイルのパスです. |
 | need_to_compile | プログラムの実行にコンパイルが必要かどうかを指定します.<br> trueの場合, {{compile_command}}を指定する必要があります. |
 | execute_command | プログラムを実行するためのコマンドです. |
-| language_id | ac-ninjaでの提出に用いる言語のidです.<br> AtCoderの提出セレクトボックスをディベロッパーツールから見ることで<br> 確認できますが, [早見表](./LANG_ID.md)が便利です. |
-| language_name | language_idの代わりに, language_nameを指定することができます.<br> AtCoderの提出言語セレクトボックスの表示の通りに指定してください.<br> \"C++(GCC 9.2.1)\", \"Python (3.8.2)\", \"Rust (1.42.0)\"など.<br> こちらも, [早見表](./LANG_ID.md)の文字列をコピペすると便利です. |
 
 ファイルパスや, 実行コマンドには{{変数}}を含むことができます.
 
@@ -38,7 +35,6 @@ output_file_path = "{{contest_dir}}/a.out"
 source_file_path = "{{contest_dir}}/{{problem_id}}.cpp"
 compile_command = "g++ {{source_file_path}} -std=c++17 -o {{output_file_path}}"
 execute_command = "{{output_file_path}}"
-language_id = 5001      # language_nameの場合 "C++ 20 (gcc 12.2)"
 ```
 
 以下はPythonでの設定例です
@@ -49,6 +45,4 @@ need_to_compile = false
 contest_dir = "{{work_space}}/{{CONTEST_TYPE}}/{{contest_id_0_pad}}"
 source_file_path = "{{contest_dir}}/{{problem_id}}/main.py"
 execute_command = "python3 {{source_file_path}}"
-language_name = "Python (CPython 3.11.4)"    # language_idの場合 5055
 ```
-

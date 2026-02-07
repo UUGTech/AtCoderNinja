@@ -2,10 +2,15 @@ mod ac_scraper;
 mod check_samples;
 mod config;
 mod data;
-mod language_id;
 mod util;
 
-use std::path::PathBuf;
+use std::{
+    collections::HashMap,
+    fs,
+    io::Write,
+    path::PathBuf,
+    process::{Command, Stdio},
+};
 
 use ac_scraper::*;
 use anyhow::Result;
@@ -14,6 +19,8 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 use colored::*;
 use config::*;
 use data::*;
+use shellexpand::full;
+use util::str_format;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -34,15 +41,15 @@ struct Cli {
 
 #[derive(Debug, Args)]
 pub struct GlobalArgs {
-    /// Without submit, only test samples
+    /// Only test samples (skip clipboard copy)
     #[arg(short, long)]
     pub local: bool,
 
-    /// Force to submit, even if ther result of the samples is not AC
+    /// Copy to clipboard even if sample results are not AC
     #[arg(short, long)]
     pub force: bool,
 
-    /// Manual input  ** This option don't allow to submit **
+    /// Manual input  ** This option doesn't run sample check **
     #[arg(short, long)]
     pub insert: bool,
 
@@ -118,6 +125,8 @@ enum MiniCommand {
     Login,
     /// Logout, delete session file from local
     Logout,
+    /// Check if local session cookie is valid
+    LoginCheck,
 }
 
 #[tokio::main]
@@ -136,6 +145,15 @@ async fn main() -> Result<()> {
             MiniCommand::Logout => {
                 ac_logout().await?;
                 println!("{}", "You are now logged out".green());
+                return Ok(());
+            }
+            MiniCommand::LoginCheck => {
+                let ok = ac_check_login(&acn).await?;
+                if ok {
+                    println!("{}", "Session is valid.".green());
+                } else {
+                    println!("{}", "Session is invalid. Run `ac-ninja login`.".yellow());
+                }
                 return Ok(());
             }
         }
@@ -179,19 +197,38 @@ async fn main() -> Result<()> {
         display_failed_detail(sample_results.failed_details);
     }
 
-    if (sample_results.total_status != Status::AC && !cli_args.force)
-        || cli_args.local
-        || cli_args.sample_case_id_arg.is_some()
-    {
-        return Ok(());
+    let should_copy = (sample_results.total_status == Status::AC || cli_args.force)
+        && !cli_args.local
+        && cli_args.sample_case_id_arg.is_none();
+    if should_copy {
+        if let Err(e) = copy_source_to_clipboard(&problem_str_info, &acn.config_str_map) {
+            eprintln!("{} {}", "Failed to copy to clipboard:".red(), e);
+        } else {
+            println!("{}", "Source copied to clipboard.".green());
+        }
     }
-    ac_submit(
-        &acn,
-        &problem_str_info,
-        &acn.config_str_map,
-        &acn.config_map,
-    )
-    .await?;
 
+    Ok(())
+}
+
+fn copy_source_to_clipboard(
+    problem_str_info: &ProblemStrInfo,
+    config_str_map: &ConfigStrMap,
+) -> Result<()> {
+    let mut data_map: HashMap<String, String> = HashMap::new();
+    data_map.extend(config_str_map.iter().map(|(k, v)| (k.clone(), v.clone())));
+    data_map.extend(problem_str_info.iter().map(|(k, v)| (k.clone(), v.clone())));
+    let source_file = str_format(config_str_map["source_file_path"].clone(), &data_map);
+    let source_path = full(&source_file)?.to_string();
+    let source = fs::read(&source_path)?;
+
+    let mut child = Command::new("pbcopy").stdin(Stdio::piped()).spawn()?;
+    if let Some(stdin) = child.stdin.as_mut() {
+        stdin.write_all(&source)?;
+    }
+    let status = child.wait()?;
+    if !status.success() {
+        return Err(anyhow::anyhow!("pbcopy failed"));
+    }
     Ok(())
 }

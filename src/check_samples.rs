@@ -1,7 +1,6 @@
 use anyhow::Result;
 use colored::*;
 use prettytable::{format, row, table, Table};
-use regex::Regex;
 use std::collections::HashMap;
 use std::io::Write;
 use std::process::{Command, Stdio};
@@ -18,55 +17,15 @@ use crate::util::split_one_line_command;
 pub enum Status {
     AC,
     WA,
-    TLE,
-    RE,
     CE,
-    WJ,
 }
 
 impl Status {
-    pub fn as_str(&self) -> &str {
-        match self {
-            Status::AC => "AC",
-            Status::WA => "WA",
-            Status::TLE => "TLE",
-            Status::RE => "RE",
-            Status::CE => "CE",
-            Status::WJ => "WJ",
-        }
-    }
     pub fn as_display_string(&self) -> ColoredString {
         match self {
             Status::AC => "AC".green(),
             Status::WA => "!! WA !!".red(),
-            Status::TLE => "!! TLE !!".yellow(),
-            Status::RE => "!! RE !!".yellow(),
             Status::CE => "!! CE !!".yellow(),
-            Status::WJ => "WJ".into(),
-        }
-    }
-
-    pub fn from_table_str(v: &str) -> Self {
-        match v {
-            "AC" => Status::AC,
-            "WA" => Status::WA,
-            "RE" => Status::RE,
-            "TLE" => Status::TLE,
-            "CE" => Status::CE,
-            "WJ" => Status::WJ,
-            _ => {
-                let re = Regex::new(r"^(\d+) */ *(\d+) *(.*)$").unwrap();
-                if let Some(caps) = re.captures(v) {
-                    let status = caps[3].trim();
-                    if status.is_empty() {
-                        Status::AC
-                    } else {
-                        Status::from_table_str(status)
-                    }
-                } else {
-                    Status::WJ
-                }
-            }
         }
     }
 }
@@ -75,14 +34,10 @@ pub struct FailedDetail {
     pub index: usize,
     pub input: String,
     pub expected: String,
-    #[allow(dead_code)]
-    pub status: Status,
     pub output: String,
 }
 
 pub struct SampleResults {
-    #[allow(dead_code)]
-    pub size: usize,
     pub total_status: Status,
     pub failed_details: Vec<FailedDetail>,
 }
@@ -187,7 +142,6 @@ pub fn sample_check(
         table = add_total_status_to_table(table, &total_status);
         table.printstd();
         return Ok(SampleResults {
-            size: 0,
             total_status,
             failed_details: vec![],
         });
@@ -229,7 +183,6 @@ pub fn sample_check(
             failed_details.push(FailedDetail {
                 index: sample_id,
                 input: samples.inputs[i].clone().1,
-                status: Status::WA,
                 expected,
                 output: output_str,
             });
@@ -242,7 +195,6 @@ pub fn sample_check(
     table.printstd();
 
     Ok(SampleResults {
-        size: samples.size,
         total_status,
         failed_details,
     })
