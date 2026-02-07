@@ -222,9 +222,7 @@ fn copy_source_to_clipboard(
     let source_path = full(&source_file)?.to_string();
     let source = fs::read(&source_path)?;
 
-    let mut child = Command::new("pbcopy")
-        .stdin(Stdio::piped())
-        .spawn()?;
+    let mut child = Command::new("pbcopy").stdin(Stdio::piped()).spawn()?;
     if let Some(stdin) = child.stdin.as_mut() {
         stdin.write_all(&source)?;
     }

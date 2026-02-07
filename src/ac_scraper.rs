@@ -8,7 +8,10 @@ use std::{
 
 use anyhow::{anyhow, Context, Result};
 use colored::*;
-use reqwest::{header::{HeaderMap, HeaderValue, COOKIE}, Response};
+use reqwest::{
+    header::{HeaderMap, HeaderValue, COOKIE},
+    Response,
+};
 use scraper::{ElementRef, Html, Selector};
 use shellexpand::full;
 

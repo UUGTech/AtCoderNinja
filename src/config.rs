@@ -13,8 +13,7 @@ use std::path::Path;
 
 const CONFIG_DIR: &str = "~/.config/ac-ninja";
 const CONFIG_PATH: &str = "~/.config/ac-ninja/config.toml";
-const DEFAULT_CONFIG: &str =
-"#config.toml
+const DEFAULT_CONFIG: &str = "#config.toml
 #
 # 設定に必須な情報はcontest_dir, source_file_path, need_to_compile,
 # execute_commandです.
