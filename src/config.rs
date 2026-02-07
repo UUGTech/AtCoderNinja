@@ -218,6 +218,7 @@ fn toml_into_config_vector(arr: Vec<toml::Value>, mut config_vector: ConfigVecto
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct Config {
     pub work_space: Option<String>,
     pub abc_dir_name: Option<String>,
@@ -304,10 +305,10 @@ pub async fn get_problem_info_from_path(
         }
     }
 
-    if contest_type.is_some() && contest_id.is_some() {
+    if let (Some(contest_type), Some(contest_id)) = (contest_type.as_deref(), contest_id) {
         let problem_info = ProblemInfo {
-            contest_type: ContestType::from_str(contest_type.unwrap().as_str()).unwrap(),
-            contest_id: contest_id.unwrap(),
+            contest_type: ContestType::from_str(contest_type).unwrap(),
+            contest_id,
             problem_id,
             task_screen_name: "".into(),
         };

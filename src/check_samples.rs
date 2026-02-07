@@ -75,11 +75,13 @@ pub struct FailedDetail {
     pub index: usize,
     pub input: String,
     pub expected: String,
+    #[allow(dead_code)]
     pub status: Status,
     pub output: String,
 }
 
 pub struct SampleResults {
+    #[allow(dead_code)]
     pub size: usize,
     pub total_status: Status,
     pub failed_details: Vec<FailedDetail>,
