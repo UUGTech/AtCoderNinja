@@ -66,7 +66,7 @@ pub async fn add_task_name_to_problem_info(
     let body = acn
         .client
         .get(tasks_url.clone())
-        .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
+        .headers(acn.cookies.clone().unwrap_or_default())
         .send()
         .await?
         .error_for_status()?
@@ -98,7 +98,7 @@ pub async fn add_task_name_to_problem_info(
         let now_idx = problem_id_to_index(&id)?;
         let config_idx = problem_id_to_index(config_id)?;
         if now_idx == config_idx {
-            let task_screen_name: String = href.split('/').last().unwrap().to_string();
+            let task_screen_name: String = href.split('/').next_back().unwrap().to_string();
             problem_info.task_screen_name = task_screen_name.clone();
             problem_str_info.insert("task_screen_name".to_string(), task_screen_name);
             return Ok((problem_info, problem_str_info));
@@ -116,7 +116,7 @@ async fn get_csrf_token(acn: &ACN, url: &str) -> Result<String> {
     let login_body = acn
         .client
         .get(url)
-        .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
+        .headers(acn.cookies.clone().unwrap_or_default())
         .send()
         .await?
         .error_for_status()?
@@ -184,7 +184,7 @@ pub async fn ac_login(acn: &ACN) -> Result<()> {
     let resp = acn
         .client
         .post(LOGIN_URL)
-        .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
+        .headers(acn.cookies.clone().unwrap_or_default())
         .form(&params)
         .send()
         .await?;
@@ -352,7 +352,7 @@ pub async fn ac_submit(
 
     let submit_file = str_format(config_str_map["source_file_path"].clone(), &data_map);
     println!("{}{}", "Submit file: ".green(), submit_file);
-    let source = fs::read(&full(&submit_file).unwrap().to_string())
+    let source = fs::read(full(&submit_file).unwrap().to_string())
         .with_context(|| format!("Failed to read {}", submit_file))?;
     let source_str = String::from_utf8_lossy(&source);
 
@@ -381,7 +381,7 @@ pub async fn ac_submit(
     let resp = acn
         .client
         .post(submit_url.as_str())
-        .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
+        .headers(acn.cookies.clone().unwrap_or_default())
         .form(&params)
         .send()
         .await?;
@@ -426,12 +426,13 @@ pub async fn ac_submit(
     let mut finish = false;
     let mut finish_msg = String::from("");
     let mut timeout_cnt = 0;
+    let status_re = Regex::new(r"^(\d+) */ *(\d+) *(.*)$").unwrap();
     while !finish {
         let submissions_url = str_format(SUBMISSIONS_URL.to_string(), &data_map);
         let req = acn
             .client
             .get(submissions_url)
-            .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
+            .headers(acn.cookies.clone().unwrap_or_default())
             .timeout(tokio::time::Duration::from_millis(2000));
         let resp = req.send().await;
 
@@ -464,7 +465,43 @@ pub async fn ac_submit(
 
         let doc = Html::parse_document(&body.unwrap());
 
-        finish_msg = if submission_id.is_none() {
+        finish_msg = if let Some(submission_id_value) = submission_id {
+            let td_selector =
+                Selector::parse(format!("td[data-id=\"{}\"]", submission_id_value).as_str())
+                    .unwrap();
+            let target_row =
+                ElementRef::wrap(doc.select(&td_selector).next().unwrap().parent().unwrap())
+                    .unwrap();
+            let submission = get_submission_info_from_row(&target_row)?;
+            let status = Status::from_table_str(&submission.status_str);
+            if status.as_str() != submission.status_str {
+                if let Some(caps) = status_re.captures(&submission.status_str) {
+                    done = caps.get(1).unwrap().as_str().parse::<u64>().unwrap();
+                    all = caps.get(2).unwrap().as_str().parse::<u64>().unwrap();
+                    pb.set_length(all);
+                    pb.set_position(done);
+                }
+            } else if status != Status::WJ {
+                finish = true;
+            }
+            if status != Status::WJ {
+                let style = match status {
+                    Status::AC => bar_green_style.clone(),
+                    Status::WA => bar_red_style.clone(),
+                    _ => bar_yellow_style.clone(),
+                };
+                pb.set_style(style);
+                pb.tick();
+            }
+            let msg = format!(
+                "{}  [ {} ]\n",
+                make_submission_display(&submission),
+                status.as_display_string().reverse()
+            );
+            submission_result = status;
+            pb.set_message(msg.clone());
+            msg
+        } else {
             let tr_selector = Selector::parse("table tbody tr").unwrap();
             let latest_row = doc.select(&tr_selector).next().unwrap();
             let submission = get_submission_info_from_row(&latest_row)?;
@@ -480,8 +517,7 @@ pub async fn ac_submit(
                 pb.tick();
             }
             if status.as_str() != submission.status_str {
-                let re = Regex::new(r"^(\d+) */ *(\d+) *(.*)$").unwrap();
-                if let Some(caps) = re.captures(&submission.status_str) {
+                if let Some(caps) = status_re.captures(&submission.status_str) {
                     done = caps.get(1).unwrap().as_str().parse::<u64>().unwrap();
                     all = caps.get(2).unwrap().as_str().parse::<u64>().unwrap();
                     pb.set_length(all);
@@ -489,43 +525,6 @@ pub async fn ac_submit(
                 }
             } else if status != Status::WJ {
                 finish = true;
-            }
-            let msg = format!(
-                "{}  [ {} ]\n",
-                make_submission_display(&submission),
-                status.as_display_string().reverse()
-            );
-            submission_result = status;
-            pb.set_message(msg.clone());
-            msg
-        } else {
-            let td_selector =
-                Selector::parse(format!("td[data-id=\"{}\"]", submission_id.unwrap()).as_str())
-                    .unwrap();
-            let target_row =
-                ElementRef::wrap(doc.select(&td_selector).next().unwrap().parent().unwrap())
-                    .unwrap();
-            let submission = get_submission_info_from_row(&target_row)?;
-            let status = Status::from_table_str(&submission.status_str);
-            if status.as_str() != submission.status_str {
-                let re = Regex::new(r"^(\d+) */ *(\d+) *(.*)$").unwrap();
-                if let Some(caps) = re.captures(&submission.status_str) {
-                    done = caps.get(1).unwrap().as_str().parse::<u64>().unwrap();
-                    all = caps.get(2).unwrap().as_str().parse::<u64>().unwrap();
-                    pb.set_length(all);
-                    pb.set_position(done);
-                }
-            } else if status != Status::WJ {
-                finish = true;
-            }
-            if status != Status::WJ {
-                let style = match status {
-                    Status::AC => bar_green_style.clone(),
-                    Status::WA => bar_red_style.clone(),
-                    _ => bar_yellow_style.clone(),
-                };
-                pb.set_style(style);
-                pb.tick();
             }
             let msg = format!(
                 "{}  [ {} ]\n",
@@ -556,7 +555,7 @@ pub async fn get_sample_cases(
     let body = acn
         .client
         .get(problem_url)
-        .headers(acn.cookies.clone().unwrap_or(HeaderMap::new()))
+        .headers(acn.cookies.clone().unwrap_or_default())
         .send()
         .await?
         .error_for_status()?
@@ -604,8 +603,7 @@ pub async fn get_sample_cases(
             outputs.push((index, pre_content.into()));
         }
     }
-    if sample_case_id_arg.is_some() {
-        let target = sample_case_id_arg.unwrap();
+    if let Some(target) = sample_case_id_arg {
         inputs.retain(|x| x.0 == target);
         outputs.retain(|x| x.0 == target);
     }
