@@ -386,7 +386,7 @@ pub fn get_config(args: &Option<GlobalArgs>) -> Result<ConfigMap> {
     Ok(config_map)
 }
 
-fn config_check(mut config_map: ConfigMap) -> Result<ConfigMap> {
+fn config_check(config_map: ConfigMap) -> Result<ConfigMap> {
     let need = [
         "need_to_compile",
         "contest_dir",
