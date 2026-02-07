@@ -577,7 +577,7 @@ pub async fn get_sample_cases(
         let mut h3_content: Option<String> = None;
         let mut cursor = pre_element.parent();
         while let Some(node) = cursor {
-            if let Some(parent) = ElementRef::wrap(node.clone()) {
+            if let Some(parent) = ElementRef::wrap(node) {
                 if let Some(h3_element) = parent.select(&h3_selector).next() {
                     if let Some(text) = h3_element.text().next() {
                         h3_content = Some(text.to_string());
@@ -597,7 +597,7 @@ pub async fn get_sample_cases(
                 .collect::<String>()
                 .parse()
                 .unwrap();
-            inputs.push((index, pre_content.into()));
+            inputs.push((index, pre_content));
         } else if is_output {
             let index: usize = h3_content
                 .chars()
@@ -605,7 +605,7 @@ pub async fn get_sample_cases(
                 .collect::<String>()
                 .parse()
                 .unwrap();
-            outputs.push((index, pre_content.into()));
+            outputs.push((index, pre_content));
         }
     }
     if let Some(target) = sample_case_id_arg {
