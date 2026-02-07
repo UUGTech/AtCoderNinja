@@ -5,7 +5,6 @@ use std::{collections::HashMap, env, fs, io::Write};
 
 use crate::ac_scraper::add_task_name_to_problem_info;
 use crate::data::ACN;
-use crate::language_id::lang_to_id;
 use crate::{util::*, GlobalArgs};
 
 use serde::{Deserialize, Serialize};
@@ -18,27 +17,18 @@ const DEFAULT_CONFIG: &str =
 "#config.toml
 #
 # 設定に必須な情報はcontest_dir, source_file_path, need_to_compile,
-# execute_command, (language_id or language_name)です.
+# execute_commandです.
 #
 # --------------------------------------------------------------------------------------
 # contest_dir:          ac-ninjaを実行するディレクトリです.
 #                       {{contesty_type}},{{contest_id}}を特定できる必要があります
 # --------------------------------------------------------------------------------------
-# source_file_path:     ac-ninjaで提出するファイルのパスです.
+# source_file_path:     ac-ninjaで扱うソースファイルのパスです.
 # --------------------------------------------------------------------------------------
 # need_to_compile:      プログラムの実行にコンパイルが必要かどうかを指定します.
 #                       trueの場合, {{compile_command}}を指定する必要があります.
 # --------------------------------------------------------------------------------------
 # execute_command:      プログラムを実行するためのコマンドです.
-# --------------------------------------------------------------------------------------
-# language_id:          ac-ninjaでの提出に用いる言語のidです.
-#                       AtCoderの提出セレクトボックスをディベロッパーツールから見ることで
-#                       確認できますが, [早見表](https://github.com/UUGTech/AtCoderNinja/blob/main/LANG_ID.md)が便利です.
-# --------------------------------------------------------------------------------------
-# language_name:        language_idの代わりに, language_nameを指定することができます.
-#                       AtCoderの提出言語セレクトボックスの表示の通りに指定してください.
-#                       \"C++(GCC 9.2.1)\", \"Python (3.8.2)\", \"Rust (1.42.0)\"など.
-#                       こちらも, [早見表](https://github.com/UUGTech/AtCoderNinja/blob/main/LANG_ID.md)の文字列をコピペすると便利です.
 # --------------------------------------------------------------------------------------
 # ファイルパスや, 実行コマンドには{{変数}}を含むことができます.
 # {{contest_type}}, {{contest_id}}, {{problem_id}}以外の変数は
@@ -60,8 +50,6 @@ const DEFAULT_CONFIG: &str =
 # source_file_path = \"{{contest_dir}}/{{problem_id}}.cpp\"
 # compile_command = \"g++ {{source_file_path}} -std=c++17 -o {{output_file_path}}\"
 # execute_command = \"{{output_file_path}}\"
-# language_id = 4003
-
 ";
 const PROBLEM_INFO_PRINT_FORMAT: &str = "{{CONTEST_TYPE}} {{contest_id}} {{PROBLEM_ID}}";
 
@@ -422,10 +410,6 @@ fn config_check(mut config_map: ConfigMap) -> Result<ConfigMap> {
         miss.push("compile_command");
     }
 
-    if !config_map.contains_key("language_id") && !config_map.contains_key("language_name") {
-        miss.push("language_( id | name )");
-    }
-
     if !miss.is_empty() {
         let miss_str: Vec<String> = miss.iter().map(|&s| s.to_string()).collect();
         return Err(anyhow!(
@@ -433,20 +417,6 @@ fn config_check(mut config_map: ConfigMap) -> Result<ConfigMap> {
             miss_str.join(", ")
         ));
     }
-
-    let lang_id: i64 = if config_map.contains_key("language_name") {
-        let lang_name = &config_map.get("language_name").unwrap().to_string();
-        lang_to_id(lang_name)?
-    } else {
-        let id_in_config = &config_map.get("language_id").unwrap().to_string();
-        let id = id_in_config.parse::<i64>();
-        if id.is_err() {
-            return Err(anyhow!("language_id must be a number"));
-        }
-        id.unwrap()
-    };
-
-    config_map.insert_integer("language_id".to_string(), lang_id);
 
     Ok(config_map)
 }
